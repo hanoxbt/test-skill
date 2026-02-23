@@ -26,6 +26,7 @@ Paste or upload a spec (feature doc, PRD, API contract, user story) and this ski
 1. Open Claude Code in your terminal
 2. Paste or upload your spec (spec.md, PRD, or requirements doc)
 3. Say: "write test cases for this spec"
+   → Or say "lite mode" / "quick coverage" for simple specs (≤3 requirements → only happy-path, negative, security)
 4. If spec is too large (>10K words) → skill stops and proposes a split plan
 5. Review the generated test suite, traceability matrix, and security report
 6. Iterate: approve, edit, or reject individual scenarios

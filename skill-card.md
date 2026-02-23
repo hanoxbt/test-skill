@@ -16,7 +16,7 @@
 | | Details |
 |---|---|
 | **Input** | Any spec (`.md`, PRD, API contract, user stories, compliance doc, bullet-point requirements, pasted text) |
-| **Output** | Complete test suite — **16 categories:** Core (Happy Path · Basic · Edge Cases · Negative) · Quality (Security · UI/UX · Accessibility) · Platform (Mobile · API · Performance) · Web3/DeFi (DeFi Security · Wallet · Token · Smart Contract · Blockchain) |
+| **Output** | Complete test suite — **16 categories:** Core (Happy Path · Basic · Edge Cases · Negative) · Quality (Security · UI/UX · Accessibility) · Platform (Mobile · API · Performance) · Web3/DeFi (DeFi Security · Wallet · Token · Smart Contract · Blockchain) — or **Lite Mode** (3 categories: happy-path, negative, security) for quick coverage |
 | **Format** | Gherkin/BDD — with tags, `Scenario Outline`, `Background`, `Examples` tables |
 | **Bonus output** | Requirement Inventory · Requirement Traceability Matrix · Coverage Matrix · Security Review Report · Risk Areas & Notes · Ambiguity flags |
 
@@ -61,6 +61,7 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 | 📐 **Format** | Consistent Gherkin/BDD — importable into Cucumber / Playwright / Behave |
 | 🗺️ **Visibility** | Coverage Matrix at the end of every output — instant coverage overview |
 | 🚨 **Risk awareness** | Skill auto-flags spec ambiguities and recommends test data to prepare |
+| ⚡ **Lite mode** | Say "lite" or "quick" → only happy-path, negative, security — ideal for simple specs |
 
 | Metric | Value |
 |---|---|

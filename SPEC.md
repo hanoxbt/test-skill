@@ -131,51 +131,26 @@ Test cases must always use **testnet addresses** and known burn addresses (e.g.,
 
 > **Goal:** Fully understand the spec before writing any test cases.
 
-**Spec Format Adaptation (handle ANY spec type):**
+**Spec Format Adaptation:** Map any format to features — **PRD** → use sections · **API contract** → endpoint group = feature · **User stories** → each story = feature · **Bullet points** → group by topic · **Compliance doc** → each regulation = requirement · **Narrative** → extract testable statements, group by topic. No clear features? Create headings by topic; flag: `MISSING: features inferred.`
 
-| Spec format | How to extract features |
-|---|---|
-| Standard feature doc / PRD | Use feature sections directly |
-| API contract (OpenAPI, Swagger) | Each endpoint group = 1 feature |
-| User story cards / Jira tickets | Each story = 1 feature; group related stories |
-| Bullet-point requirements | Group by topic into features |
-| Compliance / regulatory doc | Each regulation = 1 requirement; group by domain into features |
-| Narrative / prose doc | Extract testable statements → group by topic |
+**Domain Detection:** 10 core categories apply to all software. Adapt: **API-only** → skip `@ui`/`@ux` · **CLI** → `@ui` = command output · **IoT** → `@performance` = resource constraints · **ML/AI** → `@edge-case` = adversarial data · **Game** → `@performance` = FPS/latency · **DeFi** → activate 6 DeFi categories. Skip only if genuinely N/A.
 
-> If the spec has no explicit feature grouping, create feature headings by topic. Flag in Risk Notes: `MISSING: features inferred from content.`
-
-**Domain Detection — adapt core categories:**
-
-The 10 core test categories apply to ALL software types. The AI must detect the spec's domain and adapt:
-- **API / backend only** → skip `@ui`/`@ux` unless the API has a dashboard
-- **CLI tool** → `@ui` becomes command-line output; `@ux` becomes help text, flags, error messages
-- **IoT / embedded** → `@mobile` becomes device connectivity; `@performance` becomes resource constraints
-- **ML / AI** → `@performance` becomes model accuracy/latency; `@edge-case` includes adversarial data
-- **Game / real-time** → `@performance` becomes FPS/latency; `@security` includes cheat prevention
-- **DeFi / Web3** → activate 6 additional DeFi categories (see DeFi checklists below)
-
-> Skip a category only if genuinely N/A. Note in Coverage Matrix: `N/A — [reason]`.
+**Lite Mode:** User says "lite" / "quick" or spec ≤ 3 requirements → generate only `@happy-path`, `@negative`, `@security`. Mark output: `> ⚡ Lite mode — core coverage only.`
 
 **Extraction checklist:**
 
-The AI must extract the following information from the spec:
-
 ```
-✅ List of Features / Modules (used for grouping tests — see Spec Format Adaptation above)
-✅ User roles / actors (admin, user, guest — if none found, use "System" / "User" as defaults)
-✅ Main happy path for each feature
+✅ Features / Modules (see Spec Format Adaptation)
+✅ User roles / actors (default: "System" / "User" if none found)
+✅ Main happy path per feature
 ✅ Input fields and validation rules
 ✅ Business rules and constraints
-✅ Platform targets (web / mobile / API / CLI / IoT — infer from spec or cover all if unclear)
+✅ Platform targets (web / mobile / API / CLI / IoT — infer if unclear)
 ✅ External dependencies / integrations
 ✅ Non-functional requirements (performance, security, accessibility)
-✅ Blockchain/DeFi indicators (wallet, token, smart contract, chain references)
-✅ Smart contract addresses and networks referenced
-✅ Token standards used (ERC-20, ERC-721, ERC-1155)
-✅ DeFi protocol type (DEX, lending, staking, bridge, yield farming, NFT marketplace)
-✅ Supported chains and networks (Ethereum, BSC, Polygon, Arbitrum, etc.)
-✅ Wallet integration requirements (MetaMask, WalletConnect, etc.)
-✅ Requirements extraction — Number every distinct testable requirement: [REQ-1], [REQ-2]...[REQ-N]
+✅ Blockchain/DeFi indicators (wallet, token, smart contract, chain)
+✅ Token standards (ERC-20, ERC-721, ERC-1155), protocol type, chains, wallet requirements
+✅ Requirements extraction — Number every testable requirement: [REQ-1]...[REQ-N]
 ```
 
 **Requirements extraction rules:**
@@ -379,126 +354,38 @@ Before finishing a scenario, the AI self-checks:
 
 #### Wallet Integration Checklist (when spec involves wallet connection)
 
-*Connection & session:*
-- MetaMask / WalletConnect / Coinbase Wallet / Rabby connection flow
-- Wallet not installed — prompt to install or show alternative
-- User rejects connection request in wallet popup
-- Wallet disconnection and session expiry
-- Reconnection after page refresh — session persistence
-- Multiple wallet accounts — user switches active account mid-session
+*Connection:* MetaMask / WalletConnect / Coinbase Wallet connection · not installed → install prompt · user rejects · disconnect + session expiry · reconnect after refresh · multiple accounts switching
+*Network:* Multi-chain switching (Ethereum, BSC, Polygon, Arbitrum, etc.) · wrong network → switch prompt · switch rejected
+*Transactions:* Sign flow (approve → confirm → pending → success/fail) · gas estimation · custom gas (slow/standard/fast) · tx states (pending/confirmed/failed/dropped/replaced) · balance refresh
+*Advanced:* Mobile deep link (WalletConnect) · session timeout · hardware wallet (Ledger/Trezor)
 
-*Network management:*
-- Multi-chain network switching (Ethereum, BSC, Polygon, Arbitrum, Optimism, Base)
-- Wrong network detected — prompt to switch chain
-- Chain switch rejected by user in wallet
+#### Token / Fund Management Checklist (when spec involves tokens/fund transfers)
 
-*Transactions:*
-- Transaction signing flow: approve → confirm in wallet → pending → success/fail
-- Gas estimation display and accuracy
-- Custom gas setting (slow / standard / fast)
-- Transaction states: pending, confirmed, failed, dropped, replaced (speed-up/cancel)
-- Wallet balance display and refresh after transaction
-
-*Advanced:*
-- Deep link from dApp to mobile wallet and back
-- WalletConnect session timeout and reconnection
-- Hardware wallet (Ledger/Trezor) — longer signing time, USB/Bluetooth
-
-#### Token / Fund Management Checklist (when spec involves tokens or fund transfers)
-
-*Token transfers:*
-- ERC-20 token transfer — correct amount deducted and received
-- ERC-721 (NFT) transfer — ownership change verified on-chain
-- ERC-1155 (multi-token) transfer — batch and single transfer flows
-- Zero-amount transfer — blocked or handled gracefully
-
-*Approvals & allowances:*
-- Token approval flow — approve exact amount vs. infinite approval
-- Allowance check before spend — insufficient allowance handling
-- Revoke approval flow — user can reduce allowance to 0
-
-*Balance & display:*
-- Balance display — correct decimals per token (USDC=6, WBTC=8, ETH=18)
-- Balance refresh after transaction confirmation
-- Dust amount handling — amounts too small to transfer
-- Maximum balance operations — transfer entire balance (reserve gas for native token)
-- Unknown/unlisted token display — imported by contract address
-- Price display formatting: very small, very large, negative amounts
-
-*Cross-chain:*
-- Cross-chain bridge transfer — source chain lock → destination chain mint
-- Bridge transfer stuck/delayed — timeout and status display
+*Transfers:* ERC-20 (amount correctness) · ERC-721/NFT (ownership) · ERC-1155 (batch + single) · zero-amount → block
+*Approvals:* Exact vs infinite approval · allowance check before spend · revoke (reduce to 0)
+*Balance:* Correct decimals (USDC=6, WBTC=8, ETH=18) · refresh after tx · dust handling · max balance (reserve gas) · unknown token import · price formatting (small/large)
+*Cross-chain:* Bridge transfer (lock → mint, status) · stuck/delayed → timeout + retry
 
 #### Smart Contract Interaction Checklist (when spec involves contract calls)
 
-*Contract calls:*
-- Successful contract call — state change verified (before/after)
-- Failed contract call — reverted with reason string displayed
-- Read-only calls (view/pure) — no gas, no wallet popup
-- Write calls — gas estimate shown before wallet confirmation
-- Payable calls — ETH/native token amount clearly shown
-- Multicall / batch transactions — partial failure handling
-
-*Gas & fees:*
-- Gas limit estimation — sufficient for complex operations
-- Out-of-gas during execution — clear error, value returned minus gas
-- Failed tx still charges gas — user informed before signing
-
-*State management:*
-- Nonce management — sequential nonce for queued transactions
-- Nonce conflict — replacement transaction pattern (speed-up/cancel)
-- Event emission verification — Transfer, Approval, Swap, etc.
-- Contract upgrade (proxy) — behavior consistent, storage preserved
-
-*Transaction output:*
-- Transaction receipt — block number, tx hash, gas used, status
+*Calls:* Success (state verified) · fail (revert reason) · read-only (no gas) · write (gas estimate before popup) · payable (amount shown) · multicall (partial failure)
+*Gas:* Estimation (warning if high) · out-of-gas (clear error) · failed tx charges gas (inform user)
+*State:* Nonce sequential · nonce conflict (replacement) · event emission (Transfer, Approval, Swap) · proxy upgrade (behavior + storage preserved)
+*Output:* Receipt — block, tx hash, gas used, status
 
 #### DeFi Edge Cases Checklist (when spec involves DeFi protocols)
 
-*Trading & liquidity:*
-- Slippage tolerance exceeded — tx reverts, user informed, no fund loss
-- Price impact too high — warning before confirmation (>1% yellow, >5% red)
-- Insufficient liquidity for trade size — clear error with available info
-- Pool imbalance — extreme ratio affects pricing accuracy
+*Trading:* Slippage exceeded → revert · price impact warning (>1% yellow, >5% red) · insufficient liquidity → error · pool imbalance
+*Oracle & network:* Stale oracle (staleness check) · block confirmation delay · network congestion (gas warning) · chain reorg · tx stuck (speed-up/cancel) · sandwich protection via slippage
+*Yield:* Impermanent loss display · APY vs APR (compound/simple) · reward claiming accuracy
+*Emergency:* Protocol pause (funds safe) · emergency withdrawal (withdraw when paused)
 
-*Oracle & network:*
-- Stale oracle price — staleness threshold check
-- Block confirmation delay — pending state, no premature success
-- Network congestion — gas price spike, estimate shown with warning
-- Chain reorganization (reorg) — confirmed tx reversed, handle gracefully
-- Transaction stuck in mempool — speed up or cancel option
-- Sandwich attack protection — slippage prevents manipulated execution
+#### Financial Precision Checklist (when spec involves token amounts/DeFi calculations)
 
-*Yield & rewards:*
-- Impermanent loss display — accurate calculation for LP positions
-- APY/APR display — correct formula, compound vs simple clearly labeled
-- Reward claiming — pending rewards accurate, claim tx works
-
-*Emergency:*
-- Protocol pause — maintenance message, existing funds safe
-- Emergency withdrawal — withdraw even when protocol paused
-
-#### Financial Precision Checklist (when spec involves token amounts or DeFi calculations)
-
-*Conversion & decimals:*
-- Wei / Gwei / ETH conversion accuracy (1 ETH = 10^18 Wei)
-- Token decimal handling: USDC (6), WBTC (8), ETH (18) — display and math
-
-*Display & rounding:*
-- Rounding behavior — protocol rounds in its favor, user sees correct amount
-- Price display: very small (0.000000001), very large (1,000,000,000)
-- Exchange rate display: forward and inverse rates
-
-*Calculations:*
-- Impermanent loss calculation accuracy
-- APY vs APR formula correctness
-- Fee breakdown: swap fee, gas fee, protocol fee shown separately
-- Slippage calculation: expected vs minimum output with percentage
-- LP share percentage calculation
-
-*Boundaries:*
-- Dust prevention — minimum amounts enforced
-- Maximum supply boundary — no mint/transfer beyond totalSupply
+*Decimals:* Wei/Gwei/ETH (1 ETH = 10^18 Wei) · token decimals match display + math
+*Display:* Rounding (protocol favor) · very small/large numbers · exchange rate (both directions)
+*Calculations:* Impermanent loss · APY/APR formula · fee breakdown (swap + gas + protocol) · slippage (expected vs minimum) · LP share %
+*Boundaries:* Dust prevention (minimum enforced) · max supply (cannot exceed totalSupply)
 
 #### Error Handling Map
 

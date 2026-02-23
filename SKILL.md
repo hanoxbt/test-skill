@@ -72,50 +72,30 @@ If any are found, alert the user before proceeding:
 
 ## Step 1: Parse & Analyze the Spec
 
-### 🔍 Spec Format Adaptation (handle ANY spec type)
+### 🔍 Spec Format Adaptation
 
-First, identify the spec format and adapt your extraction strategy:
+Map any spec format to features: **PRD / feature doc** → use sections directly · **API contract** → endpoint group = feature · **User stories / Jira** → each story = feature · **Bullet-point requirements** → group by topic · **Compliance doc** → each regulation = requirement · **Narrative / prose** → extract testable statements, group by topic · **Architecture doc** → each component = feature.
 
-| Spec format | How to extract features |
-|---|---|
-| **Standard feature doc / PRD** | Use feature sections directly |
-| **API contract (OpenAPI, Swagger, REST doc)** | Each endpoint group = 1 feature (e.g., `/users/*` = User Management) |
-| **User story cards / Jira tickets** | Each story = 1 feature; group related stories |
-| **Bullet-point requirements** | Group by topic into features (e.g., all auth bullets = Authentication feature) |
-| **Compliance / regulatory doc** | Each regulation or control = 1 requirement; group by domain into features |
-| **Narrative / prose doc** | Extract testable statements → group by topic into features |
-| **Architecture / design doc** | Extract system behaviors described → treat each component as a feature |
-
-> **If the spec has NO clear features:** Group testable statements by topic and create feature headings yourself. Flag in Risk Notes: `MISSING: Spec has no explicit feature grouping — features inferred from content.`
+> No clear features? Group by topic yourself. Flag: `MISSING: features inferred from content.`
 
 ### 🌐 Domain Detection
 
-The 10 core test categories (`@happy-path`, `@basic`, `@edge-case`, `@negative`, `@security`, `@ui`/`@ux`, `@accessibility`, `@mobile`, `@api`, `@performance`) apply to **ALL software types**. Adapt them to the spec's domain:
+The 10 core categories apply to **all software**. Adapt per domain: **API-only** → skip `@ui`/`@ux` · **CLI** → `@ui` = command output, `@ux` = help/flags · **IoT** → `@mobile` = device connectivity, `@performance` = resource constraints · **ML/AI** → `@performance` = accuracy/latency, `@edge-case` = adversarial data · **Game** → `@performance` = FPS/latency, `@security` = cheat prevention · **DeFi/Web3** → activate 6 DeFi categories. Skip a category only if genuinely N/A; note in Coverage Matrix.
 
-| Domain | How to adapt core categories |
-|---|---|
-| **Web app / SaaS** | Standard — all categories apply directly |
-| **Mobile app** | Emphasize `@mobile` (touch, gestures, offline, orientation) |
-| **API / backend** | Emphasize `@api`, `@performance`, `@security`; skip `@ui`/`@ux` unless API has a dashboard |
-| **CLI tool** | `@ui` → command-line output/formatting; `@ux` → help text, flags, error messages |
-| **Desktop app** | `@mobile` → window resizing, multi-monitor; rest applies directly |
-| **IoT / embedded** | `@mobile` → device connectivity; `@performance` → resource constraints, latency; `@security` → firmware, OTA updates |
-| **ML / AI pipeline** | `@performance` → model accuracy, latency, throughput; `@edge-case` → data edge cases (empty, corrupted, adversarial); `@security` → prompt injection, data poisoning |
-| **Game / real-time** | `@performance` → FPS, tick rate, latency; `@edge-case` → state desync, race conditions; `@security` → cheat prevention |
-| **DeFi / Web3** | Activate 6 additional DeFi categories (see DeFi conditional checklists below) |
+### ⚡ Lite Mode
 
-> **Skip a category only if it is genuinely N/A** for the spec's domain (e.g., `@mobile` for a pure backend API). When skipping, note in Coverage Matrix: `N/A — [reason]`.
+If user says *"lite"*, *"quick coverage"*, or spec has ≤ 3 requirements → generate only `@happy-path`, `@negative`, `@security`. Output adds: `> ⚡ Lite mode — only core coverage. Run full mode for complete test suite.`
 
 ### 📋 Extraction Checklist
 
-Before writing any tests, mentally extract:
-- **Features / Modules** described (group your tests by these — see Spec Format Adaptation above)
-- **User roles / actors** involved (if none → use "System" / "User" as defaults)
-- **Core flows** (what's the happy path?)
-- **Data inputs & validations** mentioned
-- **Platform targets** (web, mobile, API, CLI, IoT — infer from spec or cover all if unclear)
+Before writing any tests, extract:
+- **Features / Modules** (see Spec Format Adaptation)
+- **User roles / actors** (if none → default: "System" / "User")
+- **Core flows** (happy path)
+- **Data inputs & validations**
+- **Platform targets** (web, mobile, API, CLI, IoT — infer if unclear)
 - **Business rules & constraints**
-- **Integrations / external dependencies**
+- **Integrations / dependencies**
 - **Requirements extraction** — Number every distinct testable requirement in the spec:
   - Format: `[REQ-1]`, `[REQ-2]`, ... `[REQ-N]`
   - A "requirement" = any testable statement (user can do X, system must do Y, field validates Z)
@@ -504,39 +484,19 @@ Be **exhaustive, not superficial**. For each feature, think through:
 - **PII leakage in API responses** — verify list/detail endpoints don't expose other users' personal data (name, email, ID)
 - **Insecure client storage** — auth tokens must not be stored in `localStorage` or non-`HttpOnly` cookies
 
-**DeFi Security checklist (when spec involves blockchain/DeFi):**
+**DeFi Security checklist (20 vectors — when spec involves blockchain/DeFi):**
 
-*Contract-level exploits:*
-- **Reentrancy attack** — contract calls external contract that calls back before state update completes; verify checks-effects-interactions pattern
-- **Integer overflow/underflow** — arithmetic operations exceed uint256 bounds in smart contracts; verify SafeMath or Solidity 0.8+ checked arithmetic
-- **Access control bypass** — calling owner-only or admin functions without proper role verification; verify role checks on all privileged functions
+*Contract-level:* **Reentrancy** (external call before state update; verify checks-effects-interactions) · **Integer overflow/underflow** (uint256 bounds; verify SafeMath / Solidity 0.8+) · **Access control bypass** (unauthorized call to owner-only functions)
 
-*Price & market manipulation:*
-- **Flash loan attack** — attacker borrows large sum, manipulates market, repays in single transaction; verify price cannot be manipulated atomically
-- **Oracle manipulation / price feed attack** — stale or manipulated price data from oracle (Chainlink, TWAP); verify staleness check and multiple oracle sources
-- **Front-running / MEV** — attacker observes pending transaction in mempool and submits higher-gas tx first; verify deadline/slippage protection
-- **Sandwich attack** — attacker places buy before and sell after a victim's swap to extract value; verify minimum output amount enforcement
-- **Slippage manipulation** — attacker forces trade to execute at worse price than expected; verify user-configurable slippage tolerance
+*Price & market manipulation:* **Flash loan** (borrow → manipulate → repay in 1 tx) · **Oracle manipulation** (stale/manipulated price feed; verify staleness + multi-source) · **Front-running / MEV** (mempool observation; verify deadline/slippage) · **Sandwich attack** (buy-before sell-after victim swap; verify min output) · **Slippage manipulation** (forced worse price; verify configurable tolerance)
 
-*Token & pool exploits:*
-- **Token approval exploit** — infinite approval allows contract to drain all tokens; verify exact approval amounts and revoke flow
-- **Liquidity pool drainage** — exploit that removes disproportionate liquidity from a pool; verify balanced withdrawal checks
+*Token & pool:* **Token approval exploit** (infinite approval → drain; verify exact amounts + revoke) · **Liquidity pool drainage** (disproportionate removal; verify balanced withdrawal)
 
-*State manipulation & repeated actions:*
-- **Repeated withdraw/cancel drain** — user calls withdraw() or cancel() multiple times before state update completes; verify state is updated BEFORE external call (checks-effects-interactions) and add reentrancy guard/mutex
-- **Double-claim rewards** — user claims reward multiple times in same epoch/period; verify claim status is marked before transfer and cannot be re-triggered
-- **Repeated redeem exploit** — user redeems same LP token, NFT, or voucher more than once; verify token is burned/marked as redeemed before value is transferred
-- **Cancel + execute race condition** — user submits cancel and execute simultaneously, both succeed; verify mutex/lock prevents concurrent state transitions on the same order/position
-- **Withdrawal replay across chains** — user replays a withdrawal proof on a different chain or after bridge reset; verify withdrawal nonce is chain-specific and single-use
+*State manipulation & repeated actions:* **Repeated withdraw/cancel drain** (multiple calls before state update; verify mutex/reentrancy guard) · **Double-claim rewards** (claim same epoch twice; verify claim-before-transfer) · **Repeated redeem** (redeem LP/NFT/voucher twice; verify burn-before-transfer) · **Cancel + execute race condition** (both succeed; verify mutex on order state) · **Withdrawal replay across chains** (replay proof on other chain; verify chain-specific nonce)
 
-*Protocol-level attacks:*
-- **Governance attack** — vote manipulation via flash-loan-funded voting power, proposal hijacking; verify snapshot-based voting and timelock
-- **Bridge vulnerability** — cross-chain message replay, incorrect balance attestation, delayed finality exploitation
-- **Rugpull indicators** — owner can mint unlimited tokens, pause transfers, change fees, withdraw pool; flag admin-controlled functions
+*Protocol-level:* **Governance attack** (flash-loan voting; verify snapshot + timelock) · **Bridge vulnerability** (cross-chain replay, incorrect attestation) · **Rugpull indicators** (owner mint/pause/fee change/withdraw; flag admin functions)
 
-*Signature & key security:*
-- **Signature replay attack** — signed message replayed on different chain or after nonce reset; verify EIP-712 domain separator includes chainId
-- **Private key exposure** — key material in logs, error messages, local storage, or URL params; verify no sensitive key data leaks anywhere
+*Signature & key:* **Signature replay** (replayed on different chain; verify EIP-712 chainId) · **Private key exposure** (key in logs/storage/URL; verify no leaks)
 
 **API checklist:**
 - Status codes: `200`, `201`, `400`, `401`, `403`, `404`, `409`, `422`, `429`, `500`, `503`
@@ -562,133 +522,55 @@ Be **exhaustive, not superficial**. For each feature, think through:
 
 **Wallet Integration checklist (when spec involves wallet connection):**
 
-*Connection & session:*
-- MetaMask / WalletConnect / Coinbase Wallet / Rabby connection flow
-- Wallet not installed — prompt to install or show alternative connection method
-- User rejects connection request in wallet popup
-- Wallet disconnection and session expiry handling
-- Reconnection after page refresh — session persistence
-- Multiple wallet accounts — user switches active account mid-session
+*Connection:* MetaMask / WalletConnect / Coinbase Wallet connection · wallet not installed → install prompt · user rejects connection · disconnect + session expiry · reconnect after refresh · multiple accounts switching
 
-*Network management:*
-- Multi-chain network switching (Ethereum, BSC, Polygon, Arbitrum, Optimism, Base, etc.)
-- Wrong network detected — prompt user to switch chain
-- Chain switch rejected by user in wallet popup
+*Network:* Multi-chain switching (Ethereum, BSC, Polygon, Arbitrum, etc.) · wrong network → switch prompt · chain switch rejected
 
-*Transactions:*
-- Transaction signing flow: approve → confirm in wallet → pending → success/fail
-- Gas estimation display and accuracy before wallet confirmation
-- Custom gas setting (slow / standard / fast) when supported
-- Transaction states: pending, confirmed, failed, dropped, replaced (speed-up/cancel)
-- Wallet balance display and refresh after transaction confirmation
+*Transactions:* Sign flow (approve → confirm → pending → success/fail) · gas estimation display · custom gas (slow/standard/fast) · tx states (pending, confirmed, failed, dropped, replaced) · balance refresh after confirmation
 
-*Advanced:*
-- Deep link from dApp to mobile wallet and back (WalletConnect mobile flow)
-- WalletConnect session timeout and reconnection
-- Hardware wallet (Ledger/Trezor) connection — longer signing time, USB/Bluetooth handling
+*Advanced:* Mobile deep link (WalletConnect) · session timeout/reconnect · hardware wallet (Ledger/Trezor)
 
-**Token / Fund Management checklist (when spec involves tokens or fund transfers):**
+**Token / Fund Management checklist (when spec involves tokens/fund transfers):**
 
-*Token transfers:*
-- ERC-20 token transfer — correct amount deducted from sender and received by recipient
-- ERC-721 (NFT) transfer — ownership change verified on-chain
-- ERC-1155 (multi-token) transfer — batch and single transfer flows
-- Zero-amount transfer — should be blocked or handled gracefully with clear message
+*Transfers:* ERC-20 (amount correctness) · ERC-721/NFT (ownership change) · ERC-1155 (batch + single) · zero-amount → block or handle gracefully
 
-*Approvals & allowances:*
-- Token approval flow — approve exact amount vs. infinite approval; user informed of risk
-- Allowance check before spend — insufficient allowance handling and re-approval prompt
-- Revoke approval flow — user can reduce allowance to 0 for any previously approved contract
+*Approvals:* Approve exact vs infinite (user informed of risk) · allowance check before spend · revoke approval flow (reduce to 0)
 
-*Balance & display:*
-- Balance display — correct decimals per token (USDC=6, WBTC=8, ETH=18, DAI=18)
-- Balance refresh after transaction confirmation — no stale balance displayed
-- Dust amount handling — amounts too small to transfer (below minimum or below gas cost)
-- Maximum balance operations — transfer entire balance (account for gas reservation on native token)
-- Unknown/unlisted token display — token imported by contract address shows name, symbol, decimals
-- Token list filtering and search — find tokens by name, symbol, or contract address
-- Price display formatting: very small (0.000000001), very large (1,000,000,000), negative (should never occur)
+*Balance & display:* Correct decimals per token (USDC=6, WBTC=8, ETH=18) · refresh after tx · dust handling · max balance (reserve gas on native token) · unknown token import by address · price formatting (very small/large numbers)
 
-*Cross-chain:*
-- Cross-chain bridge transfer — source chain lock → destination chain mint, status tracking
-- Bridge transfer stuck/delayed — timeout handling, retry option, and status display
+*Cross-chain:* Bridge transfer (source lock → dest mint, status tracking) · stuck/delayed bridge → timeout + retry
 
 **Smart Contract Interaction checklist (when spec involves contract calls):**
 
-*Contract calls:*
-- Successful contract call — state change verified (before/after comparison)
-- Failed contract call — reverted with reason string displayed to user in readable format
-- Read-only calls (view/pure functions) — no gas required, fast response, no wallet popup
-- Write calls requiring confirmation — gas estimate shown before wallet popup appears
-- Contract call with value (payable) — ETH/native token sent with transaction; amount clearly shown
-- Multicall / batch transactions — multiple contract calls in single transaction; partial failure handling
+*Calls:* Successful call (state change verified) · failed call (revert reason displayed) · read-only/view (no gas, no wallet popup) · write call (gas estimate before popup) · payable call (ETH amount shown) · multicall/batch (partial failure handling)
 
-*Gas & fees:*
-- Gas limit estimation — sufficient for complex operations; warning if estimate is unusually high
-- Out-of-gas during execution — user sees clear error, funds for gas are spent but value is returned
-- Failed transaction still charges gas — user informed before signing that gas is non-refundable on revert
+*Gas:* Gas estimation (warning if unusually high) · out-of-gas (clear error, value returned) · failed tx still charges gas (inform user before signing)
 
-*State management:*
-- Nonce management — sequential nonce for queued transactions from same account
-- Nonce conflict — transaction with same nonce replaces previous (speed-up/cancel pattern)
-- Event emission verification — contract emits expected events after state change (Transfer, Approval, Swap, etc.)
-- Contract upgrade (proxy pattern) — behavior consistent after implementation change; storage layout preserved
+*State:* Nonce management (sequential) · nonce conflict (speed-up/cancel replacement) · event emission (Transfer, Approval, Swap) · contract upgrade/proxy (behavior + storage preserved)
 
-*Transaction output:*
-- Transaction receipt — block number, tx hash, gas used, status displayed after confirmation
+*Output:* Transaction receipt — block number, tx hash, gas used, status
 
 **DeFi Edge Cases checklist (when spec involves DeFi protocols):**
 
-*Trading & liquidity:*
-- Slippage tolerance exceeded — transaction reverts, user informed, no fund loss
-- Price impact too high — warning displayed before confirmation (e.g., >1% yellow, >5% red)
-- Insufficient liquidity for trade size — clear error message with available liquidity info
-- Pool imbalance — extreme ratio in liquidity pool affects pricing accuracy
+*Trading:* Slippage exceeded → revert, no fund loss · price impact warning (>1% yellow, >5% red) · insufficient liquidity → clear error · pool imbalance → pricing accuracy
 
-*Oracle & network:*
-- Stale oracle price — price feed not updated within expected interval; verify staleness threshold
-- Block confirmation delay — UI shows pending state, does not assume success prematurely
-- Network congestion — gas price spike; dApp shows current gas estimate and warns user
-- Chain reorganization (reorg) — confirmed transaction reversed after reorg; handle gracefully
-- Transaction stuck in mempool — option to speed up (higher gas) or cancel (zero-value replacement)
+*Oracle & network:* Stale oracle price (staleness threshold) · block confirmation delay (pending UI) · network congestion (gas spike warning) · chain reorg (confirmed tx reversed) · tx stuck in mempool (speed-up / cancel)
 
-*MEV protection:*
-- Sandwich attack protection — slippage protection prevents execution at manipulated price
-- Front-run detection — transaction outcome differs significantly from pre-execution estimate
-- MEV protection — user can opt for private mempool (Flashbots Protect RPC) if available
+*MEV protection:* Sandwich protection via slippage · front-run detection (outcome vs estimate) · private mempool option (Flashbots)
 
-*Yield & rewards:*
-- Impermanent loss display — accurate calculation shown for LP positions with clear explanation
-- APY/APR display — accurate calculation, clearly distinguishes APY (compound) vs APR (simple)
-- Reward claiming — pending rewards display accurately and claim transaction works correctly
-- Compounding rewards — auto-compound vs manual-compound flows; gas cost vs reward value comparison
+*Yield:* Impermanent loss display · APY vs APR (compound vs simple) · reward claiming accuracy · auto-compound vs manual (gas cost comparison)
 
-*Emergency:*
-- Protocol pause — contract paused by admin; user sees maintenance message, existing funds remain safe
-- Emergency withdrawal — user can withdraw funds even when protocol is paused or in emergency mode
+*Emergency:* Protocol pause (maintenance message, funds safe) · emergency withdrawal (withdraw even when paused)
 
-**Financial Precision checklist (when spec involves token amounts or DeFi calculations):**
+**Financial Precision checklist (when spec involves token amounts/DeFi calculations):**
 
-*Conversion & decimals:*
-- Wei / Gwei / ETH conversion accuracy (1 ETH = 10^18 Wei = 10^9 Gwei)
-- Token decimal handling: USDC (6), WBTC (8), ETH/WETH (18), DAI (18) — display and calculation must match
+*Decimals:* Wei/Gwei/ETH conversion (1 ETH = 10^18 Wei) · token decimals (USDC=6, WBTC=8, ETH=18) match display + calculation
 
-*Display & rounding:*
-- Rounding behavior in swap calculations — protocol rounds in its favor, never shows user more than they receive
-- Price display for very small numbers: `0.000000001` displayed as scientific notation or truncated appropriately
-- Price display for very large numbers: `1,000,000,000` with proper comma/dot locale formatting
-- Exchange rate display — source token per destination token, and inverse rate available
+*Display:* Rounding (protocol rounds in its favor) · very small numbers (`0.000000001`) · very large numbers (locale formatting) · exchange rate (both directions)
 
-*Calculations:*
-- Impermanent loss calculation accuracy — matches reference formula within acceptable precision
-- APY/APR calculation — correct formula applied, compound frequency clearly specified
-- Fee calculation breakdown — swap fee, gas fee, protocol fee all shown separately and sum correctly
-- Slippage calculation — expected output vs minimum received output clearly shown with percentage
-- LP share calculation — user's percentage of total pool displayed accurately
+*Calculations:* Impermanent loss accuracy · APY vs APR formula · fee breakdown (swap + gas + protocol = total) · slippage (expected vs minimum output) · LP share percentage
 
-*Boundaries:*
-- Dust prevention — minimum transfer/swap amount enforced; amounts below dust threshold rejected
-- Maximum supply boundary — cannot mint/transfer beyond token's totalSupply
+*Boundaries:* Dust prevention (minimum amount enforced) · max supply (cannot exceed totalSupply)
 
 ---
 
