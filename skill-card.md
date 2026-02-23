@@ -16,7 +16,7 @@
 | | Details |
 |---|---|
 | **Input** | A spec `.md` file (or PRD, requirements doc, pasted text) |
-| **Output** | Complete test suite: Happy Path · Edge Cases · Negative · Security · DeFi Security · UI/UX · Accessibility · Mobile · API · Performance · Web3/Wallet · Token · Smart Contract · Blockchain |
+| **Output** | Complete test suite — **16 categories:** Core (Happy Path · Basic · Edge Cases · Negative) · Quality (Security · UI/UX · Accessibility) · Platform (Mobile · API · Performance) · Web3/DeFi (DeFi Security · Wallet · Token · Smart Contract · Blockchain) |
 | **Format** | Gherkin/BDD — with tags, `Scenario Outline`, `Background`, `Examples` tables |
 | **Bonus output** | Coverage Matrix · Risk Areas & Notes · Ambiguity flags |
 
@@ -33,6 +33,8 @@
 ```
 Spec → QC reads spec manually → brainstorms test cases → writes them out
      → reviews again → fills in missed cases → reformats for consistency
+
+     ⏱️ Time: 1–2 days per module
 ```
 
 | Item | Reality |
@@ -48,6 +50,8 @@ Spec → QC reads spec manually → brainstorms test cases → writes them out
 
 ```
 Spec → Feed into Claude Code + Skill → Review output → Done
+
+     ⚡ Time: ~15–30 minutes (including review)
 ```
 
 | Item | Reality |
@@ -58,9 +62,11 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 | 🗺️ **Visibility** | Coverage Matrix at the end of every output — instant coverage overview |
 | 🚨 **Risk awareness** | Skill auto-flags spec ambiguities and recommends test data to prepare |
 
-**Time saved:** ~90% reduction in manual test case writing time
-**Quality gain:** Security, DeFi exploit vectors, accessibility, and mobile scenarios — the ones that are usually skipped — are now always covered
-**DeFi-ready:** Web3/DeFi specs auto-trigger 6 specialized checklists: DeFi Security (reentrancy, flash loan, MEV, sandwich), Wallet Integration, Token Management, Smart Contract, Financial Precision, Blockchain Errors
+| Metric | Value |
+|---|---|
+| **Time saved** | ~90% reduction in manual test case writing time |
+| **Quality gain** | Security, DeFi exploit vectors, accessibility, and mobile scenarios — the ones usually skipped — are now always covered |
+| **DeFi-ready** | Web3/DeFi specs auto-trigger 6 specialized checklists: DeFi Security, Wallet, Token, Smart Contract, Financial Precision, Blockchain Errors |
 
 ---
 
