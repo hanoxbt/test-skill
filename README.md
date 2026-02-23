@@ -1,6 +1,6 @@
 # Test Case Generator Skill
 
-A Claude Code skill that automatically generates exhaustive, production-quality test cases in **Gherkin/BDD format** from any product specification, PRD, or requirements document.
+A Claude Code skill that automatically generates exhaustive, production-quality test cases in **Gherkin/BDD format** from any product specification, PRD, or requirements document — supporting **Web2, Web3, and DeFi** products.
 
 ---
 
@@ -22,7 +22,7 @@ This skill activates when you:
 
 - Upload or paste a `spec.md`, PRD, or requirements doc and ask for test cases
 - Say things like *"write tests for this spec"*, *"generate QA cases"*, *"cover this feature with tests"*, *"what should I test?"*, *"create test scenarios from this doc"*
-- Paste a spec and ask for testing help — for web apps, mobile apps, APIs, or full-stack products
+- Paste a spec and ask for testing help — for web apps, mobile apps, APIs, DeFi protocols, or full-stack products
 
 ---
 
@@ -40,6 +40,12 @@ This skill activates when you:
 | `@mobile` | Touch, gestures, screen sizes, offline behavior |
 | `@api` | Endpoints, status codes, payloads, response contracts |
 | `@performance` | Load, concurrency, timeout behavior |
+| `@web3` | Blockchain interactions, dApp behavior, chain states |
+| `@wallet` | Wallet connection, signing, network switching, sessions |
+| `@defi-security` | DeFi exploit vectors: reentrancy, flash loan, oracle, MEV |
+| `@smart-contract` | Contract calls, gas, nonce, state verification, events |
+| `@token` | Token transfers, approvals, decimals, balances, standards |
+| `@blockchain` | Chain-level: confirmations, reorg, mempool, gas price |
 
 ---
 
@@ -62,6 +68,7 @@ This skill activates when you:
 ### Mobile                    → @mobile (if applicable)
 ### API                       → @api (if applicable)
 ### Performance               → @performance (if applicable)
+### Web3 / DeFi               → @web3 @defi-security @wallet @token (if applicable)
 
 ## Coverage Matrix            → scenarios per feature × category
 ## Risk Areas & Notes         → ambiguities, high-risk flows, test data needs
@@ -104,6 +111,33 @@ This skill activates when you:
 - Keyboard push-up behavior, offline mode
 - App backgrounding mid-flow, deep links
 - Portrait/landscape orientation
+
+### DeFi Security (when spec involves blockchain/DeFi)
+- Reentrancy, flash loan, oracle manipulation attacks
+- Front-running / MEV, sandwich attacks
+- Token approval exploits (infinite approval), slippage manipulation
+- Governance attacks, bridge vulnerabilities, signature replay
+- Rugpull indicators, access control bypass, private key exposure
+
+### Wallet Integration
+- MetaMask / WalletConnect connection, wrong network, chain switching
+- Transaction signing flow, gas estimation, tx states (pending/confirmed/failed)
+- Wallet disconnect, reconnect, multiple accounts, hardware wallet
+
+### Token / Fund Management
+- ERC-20/721/1155 transfers, approvals, revoke, allowance checks
+- Balance display with correct decimals (USDC=6, ETH=18), dust handling
+- Cross-chain bridge transfers, max balance operations
+
+### Smart Contract & Blockchain
+- Contract call success/failure, gas estimation, revert with reason
+- Nonce management, event emission, multicall/batch transactions
+- Blockchain errors: TRANSACTION_REVERTED, OUT_OF_GAS, USER_REJECTED, INSUFFICIENT_FUNDS
+
+### Financial Precision
+- Wei/Gwei/ETH conversion, token decimal handling, rounding behavior
+- Price display (very small/large numbers), APY/APR calculation accuracy
+- Fee breakdown, slippage calculation, LP share percentage
 
 ---
 

@@ -16,7 +16,7 @@
 | | Details |
 |---|---|
 | **Input** | A spec `.md` file (or PRD, requirements doc, pasted text) |
-| **Output** | Complete test suite: Happy Path · Edge Cases · Negative · Security · UI/UX · Accessibility · Mobile · API · Performance |
+| **Output** | Complete test suite: Happy Path · Edge Cases · Negative · Security · DeFi Security · UI/UX · Accessibility · Mobile · API · Performance · Web3/Wallet · Token · Smart Contract · Blockchain |
 | **Format** | Gherkin/BDD — with tags, `Scenario Outline`, `Background`, `Examples` tables |
 | **Bonus output** | Coverage Matrix · Risk Areas & Notes · Ambiguity flags |
 
@@ -53,13 +53,14 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 | Item | Reality |
 |---|---|
 | ⚡ **Time spent** | **~15–30 minutes** for the same module (including review) |
-| ✅ **Coverage** | 10 test types generated automatically — nothing skipped |
+| ✅ **Coverage** | 16 test types generated automatically — including 6 Web3/DeFi categories when applicable |
 | 📐 **Format** | Consistent Gherkin/BDD — importable into Cucumber / Playwright / Behave |
 | 🗺️ **Visibility** | Coverage Matrix at the end of every output — instant coverage overview |
 | 🚨 **Risk awareness** | Skill auto-flags spec ambiguities and recommends test data to prepare |
 
 **Time saved:** ~90% reduction in manual test case writing time
-**Quality gain:** Security, accessibility, and mobile scenarios — the ones that are usually skipped — are now always covered
+**Quality gain:** Security, DeFi exploit vectors, accessibility, and mobile scenarios — the ones that are usually skipped — are now always covered
+**DeFi-ready:** Web3/DeFi specs auto-trigger 6 specialized checklists: DeFi Security (reentrancy, flash loan, MEV, sandwich), Wallet Integration, Token Management, Smart Contract, Financial Precision, Blockchain Errors
 
 ---
 
@@ -85,6 +86,7 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 | **Domain-specific rules** | The skill doesn't know project-specific business rules unless they are explicitly stated in the spec |
 | **Human review still needed** | Output should be reviewed and extended by a QC for project-specific edge cases |
 | **Large specs** | Very long specs (200+ pages) may need to be split by feature before feeding in |
+| **DeFi specificity** | DeFi checklists require the spec to explicitly mention protocols, attack vectors, and chain details — the skill flags gaps but cannot invent protocol-specific business logic |
 
 ---
 
@@ -92,9 +94,16 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 
 If given more time, the skill would be extended in this order:
 
-### 🔜 Phase 2 — Priority Matrix
+### ✅ Phase 2 — Priority Matrix (Done in v1.2)
 - Automatically assign `Critical / Major / Minor` priority to each scenario based on business impact
-- Add a Priority column to the Coverage Matrix output
+- Priority Distribution table in Coverage Matrix output
+
+### ✅ Phase 2.5 — Web3/DeFi Support (Done in v2.0)
+- 6 new test categories: `@web3`, `@wallet`, `@defi-security`, `@smart-contract`, `@token`, `@blockchain`
+- DeFi Security checklist: 15 exploit vectors (reentrancy, flash loan, oracle, MEV, sandwich, etc.)
+- Wallet, Token, Smart Contract, Financial Precision, DeFi Edge Cases checklists
+- Blockchain Error Handling Map (12 error types)
+- Conditional activation — DeFi checklists only trigger when spec contains DeFi keywords
 
 ### 🔜 Phase 3 — Test Report Template
 - After generating test cases → also generate a ready-to-use report template (QC only fills in Pass/Fail)
@@ -111,4 +120,4 @@ If given more time, the skill would be extended in this order:
 
 ---
 
-*Built by:* **QC Team** · *Platform:* Claude Code · *Version:* 1.0 · *Date:* 2026-02-23
+*Built by:* **QC Team** · *Platform:* Claude Code · *Version:* 2.0 · *Date:* 2026-02-23

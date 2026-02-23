@@ -1,7 +1,7 @@
 # Spec: Test Case Generator Skill
 
-**Version:** 1.2
-**Prompt Version:** v1.2.0
+**Version:** 2.0
+**Prompt Version:** v2.0.0
 **Author:** QA Team
 **Last Updated:** 2026-02-23
 **Skill File:** `test-case-generator/SKILL.md`
@@ -86,11 +86,23 @@ To ensure stable, complete output and avoid token-limit failures when calling 3r
 | Internal system URLs | Replace with generic | `https://internal.company.vn/api` → `https://example.com/api` |
 | Personal names (if sensitive) | Replace if not essential to test logic | `Nguyen Van A` → `Test User` |
 | Real prices / financial data | Mask unless needed for boundary test | `1,990,000 VND` → `[PRICE]` |
+| Private keys (hex) | NEVER include in any context | `0xac0974bfc196a7...` → `[REDACTED-PRIVATE-KEY]` |
+| Seed phrases / mnemonics | NEVER include in any context | `"abandon ability able..."` → `[REDACTED-SEED-PHRASE]` |
+| Mainnet wallet addresses | Replace with testnet or dead address | `0x28C6c0...` → `0x000...dEaD` |
+| Mainnet RPC URLs with keys | Strip API keys | `https://mainnet.infura.io/v3/abc123` → `[REDACTED-RPC-URL]` |
+| Contract addresses (mainnet) | Use testnet equivalent | Mainnet address → Testnet deployment address |
 
 **Skill behavior:** Before generating, the AI scans the incoming spec for patterns matching the above types and alerts the user:
 > *"⚠️ This spec may contain sensitive data (email, phone, API key detected). Mask before proceeding? [Yes / No / Show what was found]"*
 
 **QC implication:** For enterprise usage, data masking is a **mandatory pre-processing step**, not optional. Any unmasked sensitive data detected in the spec must be flagged in Risk Notes.
+
+**Web3 Data Privacy Note:**
+On-chain data (wallet addresses, transaction hashes, contract addresses) is publicly visible by design — this is fundamentally different from Web2 privacy. However, the following are **critical secrets** and must NEVER appear in test cases or be sent to 3rd party AI APIs:
+- **Private keys** — control of funds; exposure = total loss
+- **Seed phrases / mnemonics** — recovery of entire wallet
+- **RPC endpoint API keys** — metered access, can be abused for resource drain
+Test cases must always use **testnet addresses** and known burn addresses (e.g., `0x000000000000000000000000000000000000dEaD`).
 
 ---
 
@@ -111,6 +123,12 @@ The AI must extract the following information from the spec:
 ✅ Platform targets (web / mobile / API)
 ✅ External dependencies / integrations
 ✅ Non-functional requirements (performance, security, accessibility)
+✅ Blockchain/DeFi indicators (wallet, token, smart contract, chain references)
+✅ Smart contract addresses and networks referenced
+✅ Token standards used (ERC-20, ERC-721, ERC-1155)
+✅ DeFi protocol type (DEX, lending, staking, bridge, yield farming, NFT marketplace)
+✅ Supported chains and networks (Ethereum, BSC, Polygon, Arbitrum, etc.)
+✅ Wallet integration requirements (MetaMask, WalletConnect, etc.)
 ```
 
 **If the spec is ambiguous or incomplete:**
@@ -136,6 +154,12 @@ For each feature, the AI selects the relevant test types from the list below:
 | `@mobile` | Touch, gesture, offline, orientation | When platform is mobile/app |
 | `@api` | Endpoint, status codes, payload | When there is an API/backend |
 | `@performance` | Load, concurrency, timeout | When spec mentions a performance SLA |
+| `@web3` | Blockchain interactions, dApp UX | When spec mentions blockchain, dApp, or web3 |
+| `@wallet` | Wallet connection, signing, sessions | When spec mentions wallet, MetaMask, WalletConnect |
+| `@defi-security` | DeFi exploit vectors | When spec mentions DeFi, swap, liquidity, staking, bridge |
+| `@smart-contract` | Contract calls, gas, state, events | When spec mentions smart contract, Solidity, contract call |
+| `@token` | Token transfers, approvals, balances | When spec mentions token, ERC-20, NFT, transfer, approve |
+| `@blockchain` | Chain behaviors, confirmations, reorg | When spec mentions chain, block, confirmation, mempool |
 
 **Important rule:** Never omit `@happy-path`, `@basic`, `@edge-case`, or `@negative` for any feature. These 4 types are mandatory.
 
@@ -256,6 +280,109 @@ Before finishing a scenario, the AI self-checks:
 - Timeout handling
 - Retry logic
 
+#### DeFi Security Checklist (when spec involves DeFi/blockchain)
+
+| Attack Vector | Test Description | Generate test when |
+|---|---|---|
+| Reentrancy | External call re-enters contract before state update | Contract has external calls before state changes |
+| Flash loan | Large borrow → manipulate → repay in one tx | Protocol has price-dependent operations |
+| Oracle manipulation | Stale/manipulated price feed | Protocol uses price oracles (Chainlink, TWAP) |
+| Front-running / MEV | Tx observed in mempool, higher-gas tx submitted first | Spec involves swaps or time-sensitive operations |
+| Sandwich attack | Buy-before, sell-after victim's swap | Spec involves DEX swaps |
+| Integer overflow/underflow | Arithmetic exceeds uint256 bounds | Contract performs multiplication or exponentiation |
+| Governance attack | Flash-loan funded voting, proposal hijack | Spec has governance/voting mechanism |
+| Bridge vulnerability | Cross-chain message replay, incorrect attestation | Spec involves cross-chain bridge |
+| Token approval exploit | Infinite approval allows drain of all tokens | Spec has token approve/transferFrom flows |
+| Slippage manipulation | Trade executes at worse price than expected | Spec involves token swaps |
+| Liquidity drainage | Disproportionate liquidity removal | Spec involves liquidity pools |
+| Rugpull indicators | Owner mint, pause, fee change, withdraw backdoor | Spec has admin/owner-controlled functions |
+| Signature replay | Signed message replayed on different chain/context | Spec uses off-chain signatures (EIP-712, permits) |
+| Private key exposure | Key in logs, storage, URL, error messages | Any spec with wallet/key management |
+| Access control bypass | Unauthorized call to restricted functions | Contract has role-based access (onlyOwner, etc.) |
+
+#### Wallet Integration Checklist (when spec involves wallet connection)
+- MetaMask / WalletConnect / Coinbase Wallet / Rabby connection flow
+- Wallet not installed — prompt to install or show alternative
+- User rejects connection request in wallet popup
+- Multi-chain network switching (Ethereum, BSC, Polygon, Arbitrum, Optimism, Base)
+- Wrong network detected — prompt to switch chain
+- Chain switch rejected by user in wallet
+- Wallet disconnection and session expiry
+- Reconnection after page refresh — session persistence
+- Multiple wallet accounts — user switches active account mid-session
+- Transaction signing flow: approve → confirm in wallet → pending → success/fail
+- Gas estimation display and accuracy
+- Custom gas setting (slow / standard / fast)
+- Transaction states: pending, confirmed, failed, dropped, replaced (speed-up/cancel)
+- Wallet balance display and refresh after transaction
+- Deep link from dApp to mobile wallet and back
+- WalletConnect session timeout and reconnection
+- Hardware wallet (Ledger/Trezor) — longer signing time, USB/Bluetooth
+
+#### Token / Fund Management Checklist (when spec involves tokens or fund transfers)
+- ERC-20 token transfer — correct amount deducted and received
+- ERC-721 (NFT) transfer — ownership change verified on-chain
+- ERC-1155 (multi-token) transfer — batch and single transfer flows
+- Token approval flow — approve exact amount vs. infinite approval
+- Allowance check before spend — insufficient allowance handling
+- Revoke approval flow — user can reduce allowance to 0
+- Balance display — correct decimals per token (USDC=6, WBTC=8, ETH=18)
+- Balance refresh after transaction confirmation
+- Dust amount handling — amounts too small to transfer
+- Maximum balance operations — transfer entire balance (reserve gas for native token)
+- Zero-amount transfer — blocked or handled gracefully
+- Unknown/unlisted token display — imported by contract address
+- Cross-chain bridge transfer — source chain lock → destination chain mint
+- Bridge transfer stuck/delayed — timeout and status display
+- Price display formatting: very small, very large, negative amounts
+
+#### Smart Contract Interaction Checklist (when spec involves contract calls)
+- Successful contract call — state change verified (before/after)
+- Failed contract call — reverted with reason string displayed
+- Gas limit estimation — sufficient for complex operations
+- Out-of-gas during execution — clear error, value returned minus gas
+- Nonce management — sequential nonce for queued transactions
+- Nonce conflict — replacement transaction pattern (speed-up/cancel)
+- Event emission verification — Transfer, Approval, Swap, etc.
+- Multicall / batch transactions — partial failure handling
+- Contract upgrade (proxy) — behavior consistent, storage preserved
+- Read-only calls (view/pure) — no gas, no wallet popup
+- Write calls — gas estimate shown before wallet confirmation
+- Payable calls — ETH/native token amount clearly shown
+- Failed tx still charges gas — user informed before signing
+- Transaction receipt — block number, tx hash, gas used, status
+
+#### DeFi Edge Cases Checklist (when spec involves DeFi protocols)
+- Slippage tolerance exceeded — tx reverts, user informed, no fund loss
+- Price impact too high — warning before confirmation (>1% yellow, >5% red)
+- Insufficient liquidity for trade size — clear error with available info
+- Pool imbalance — extreme ratio affects pricing accuracy
+- Stale oracle price — staleness threshold check
+- Block confirmation delay — pending state, no premature success
+- Network congestion — gas price spike, estimate shown with warning
+- Chain reorganization (reorg) — confirmed tx reversed, handle gracefully
+- Transaction stuck in mempool — speed up or cancel option
+- Sandwich attack protection — slippage prevents manipulated execution
+- Impermanent loss display — accurate calculation for LP positions
+- APY/APR display — correct formula, compound vs simple clearly labeled
+- Reward claiming — pending rewards accurate, claim tx works
+- Protocol pause — maintenance message, existing funds safe
+- Emergency withdrawal — withdraw even when protocol paused
+
+#### Financial Precision Checklist (when spec involves token amounts or DeFi calculations)
+- Wei / Gwei / ETH conversion accuracy (1 ETH = 10^18 Wei)
+- Token decimal handling: USDC (6), WBTC (8), ETH (18) — display and math
+- Rounding behavior — protocol rounds in its favor, user sees correct amount
+- Dust prevention — minimum amounts enforced
+- Maximum supply boundary — no mint/transfer beyond totalSupply
+- Price display: very small (0.000000001), very large (1,000,000,000)
+- Impermanent loss calculation accuracy
+- APY vs APR formula correctness
+- Fee breakdown: swap fee, gas fee, protocol fee shown separately
+- Slippage calculation: expected vs minimum output with percentage
+- LP share percentage calculation
+- Exchange rate display: forward and inverse rates
+
 #### Error Handling Map
 
 For every API endpoint or system operation in the spec, generate explicit test cases mapped to the following error codes:
@@ -275,6 +402,27 @@ For every API endpoint or system operation in the spec, generate explicit test c
 | `503` | Service Unavailable | External dependency down — verify fallback behavior and user feedback |
 
 **Minimum rule:** For every API endpoint, generate at least: `200/201`, `400`, `401`, and `422` scenarios. Add `429` and `503` whenever the feature uses a 3rd party service.
+
+#### Blockchain Error Handling Map (when spec involves smart contract interactions)
+
+For every smart contract interaction or blockchain operation in the spec, generate explicit test cases mapped to the following error types:
+
+| Error Type | Meaning | Generate test when |
+|---|---|---|
+| `TRANSACTION_REVERTED` | Contract execution failed — with reason string | Always for write operations |
+| `OUT_OF_GAS` | Gas limit insufficient for operation complexity | Complex contract calls (multi-step, loops) |
+| `NONCE_TOO_LOW` | Transaction nonce already used | Multiple rapid transactions from same account |
+| `NONCE_TOO_HIGH` | Gap in nonce sequence — transaction queued | User has pending transactions |
+| `INSUFFICIENT_FUNDS` | Balance < gas × gasPrice + value | Any transaction requiring ETH/native token |
+| `CONTRACT_EXECUTION_ERROR` | Unhandled revert or panic in contract | Always for contract interactions |
+| `NETWORK_NOT_SUPPORTED` | dApp does not support user's current chain | Multi-chain dApp |
+| `USER_REJECTED` | User clicked "Reject" in wallet popup | Always for any wallet confirmation |
+| `TRANSACTION_UNDERPRICED` | Gas price too low for current network conditions | When network congestion is possible |
+| `REPLACEMENT_UNDERPRICED` | Speed-up/cancel tx gas not higher than original | When speed-up/cancel feature exists |
+| `CALL_EXCEPTION` | Static call failed — view function error | Read-only contract queries |
+| `TIMEOUT` | Transaction not mined within expected time | Testnet or congested network |
+
+**Minimum rule:** For every contract interaction, generate at least: successful call, `TRANSACTION_REVERTED` (with reason), `USER_REJECTED`, and `INSUFFICIENT_FUNDS` scenarios.
 
 ---
 
@@ -325,6 +473,9 @@ For every API endpoint or system operation in the spec, generate explicit test c
 ### ⚡ Performance  ← Only included when relevant
 [Gherkin scenarios]
 
+### 🔗 Web3 / DeFi   ← Only included when relevant
+[Gherkin scenarios]
+
 ---
 
 [Repeat ## Feature block for each feature]
@@ -333,10 +484,10 @@ For every API endpoint or system operation in the spec, generate explicit test c
 
 ## 🗺️ Coverage Matrix
 
-| Feature | Happy Path | Edge Cases | Negative | Security | UI/UX | A11y | Mobile | API | Total |
-|---------|-----------|-----------|----------|----------|-------|------|--------|-----|-------|
-| F1      | ✅ X      | ✅ X      | ✅ X    | ✅ X    | ✅ X | ✅ X | ✅ X  | ✅ X| X    |
-| Total   | X         | X         | X        | X        | X     | X    | X      | X   | X    |
+| Feature | Happy Path | Edge Cases | Negative | Security | DeFi Sec | UI/UX | A11y | Mobile | API | Web3 | Total |
+|---------|-----------|-----------|----------|----------|----------|-------|------|--------|-----|------|-------|
+| F1      | ✅ X      | ✅ X      | ✅ X    | ✅ X    | ✅ X    | ✅ X | ✅ X | ✅ X  | ✅ X| ✅ X | X    |
+| Total   | X         | X         | X        | X        | X        | X     | X    | X      | X   | X    | X    |
 
 ### Priority Distribution
 
@@ -410,6 +561,7 @@ Output is saved as a `.md` file named: `test-suite-[feature-name].md`
 | **Security coverage** | At least 3–5 security scenarios for any feature with forms, auth, or user data |
 | **Risk awareness** | Risk Notes section states ambiguities, hallucination flags, and missing info from spec |
 | **Coverage visibility** | Coverage Matrix + Priority Distribution table at the end of every output |
+| **DeFi coverage** | When spec is DeFi-related: at least 5 DeFi security scenarios, wallet integration scenarios, and financial precision scenarios |
 
 ### 4.3 Good vs Bad Output Examples
 
@@ -487,7 +639,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 **Every generation run must log the following metadata at the top of its output:**
 
 ```
-> Prompt Version: v1.2.0
+> Prompt Version: v2.0.0
 > Model: claude-sonnet-4
 > Generated at: 2026-02-23 09:00
 > Input spec: spec-auth.md
@@ -498,9 +650,9 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 
 | Change type | Version bump |
 |---|---|
-| Minor wording improvement in prompt | Patch: `v1.2.0` → `v1.2.1` |
-| New checklist item or new test category added | Minor: `v1.2.0` → `v1.3.0` |
-| Major restructure of step logic or output format | Major: `v1.2.0` → `v2.0.0` |
+| Minor wording improvement in prompt | Patch: `v2.0.0` → `v2.0.1` |
+| New checklist item or new test category added | Minor: `v2.0.0` → `v2.1.0` |
+| Major restructure of step logic or output format | Major: `v2.0.0` → `v3.0.0` |
 
 > **QC implication:** If the same spec generates different output across two runs, QC must check if the Prompt Version changed. Different prompt versions are **not comparable** — treat them as separate test suites.
 
@@ -551,6 +703,13 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 - **Localization:** Always detect input spec language and generate test cases in the same language. Keep Gherkin keywords in English regardless. Flag any unrecognized Vietnamese QA slang in Risk Notes
 - **Input size enforcement:** Reject or split specs exceeding 10,000 words or 20 features. Warn the user before proceeding. Never silently truncate a large spec
 - **Prompt version tracing:** Every output file must include the Prompt Version used to generate it, so QC can trace changes in output across different skill versions
+- **DeFi only when relevant:** If the spec has no blockchain/wallet/token/smart contract references, skip all `@web3`, `@wallet`, `@defi-security`, `@smart-contract`, `@token`, `@blockchain` scenarios entirely — do not generate DeFi noise for Web2 specs
+- **DeFi keyword trigger:** Activate DeFi checklists when the spec contains any of: `blockchain`, `web3`, `defi`, `wallet`, `token`, `smart contract`, `solidity`, `erc-20`, `erc-721`, `erc-1155`, `metamask`, `walletconnect`, `swap`, `liquidity`, `staking`, `yield`, `pool`, `bridge`, `chain`, `gas`, `wei`, `gwei`, `nonce`
+- **Fund safety is paramount:** Every scenario involving fund transfer, withdrawal, or token approval must be tagged `@critical` — no exceptions. Loss of funds is irreversible in blockchain
+- **Testnet only in test data:** All blockchain addresses, transaction hashes, and contract addresses in test assertions must use testnet values. Mainnet addresses from specs must be flagged in Risk Notes
+- **Private key prohibition:** Private keys and seed phrases must NEVER appear in generated test cases, even as examples — use `[REDACTED-PRIVATE-KEY]` and `[REDACTED-SEED-PHRASE]`
+- **DeFi security minimum:** When the spec describes a DeFi protocol, generate at least 5–8 DeFi security scenarios covering the most relevant attack vectors for that protocol type (DEX → sandwich/slippage/MEV; lending → flash loan/oracle/liquidation; bridge → replay/finality)
+- **Financial precision minimum:** For any spec involving token amounts or DeFi calculations, always include at least 3 scenarios testing decimal precision, rounding behavior, and boundary amounts (dust, max supply)
 
 ---
 
@@ -570,6 +729,14 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 | Spec is written in Vietnamese | Generate test cases in Vietnamese; keep Gherkin keywords in English; flag any QA slang or ambiguous terms in Risk Notes |
 | Spec uses Vietnamese QA slang (e.g., "về bờ", "tráp", "chạy ngon") | Flag the term in Risk Notes with `# LOCALIZATION: term unclear`; use closest English equivalent in the scenario |
 | Spec size exceeds 10,000 words or 20 features | Split by feature before generating. Never silently truncate. Warn user and propose a chunking plan |
+| Spec describes a DeFi DEX (swap protocol) | Activate full DeFi checklist: DeFi Security (especially sandwich, slippage, oracle, MEV), Wallet Integration, Token Management, Smart Contract, Financial Precision. Minimum 5 DeFi security scenarios |
+| Spec describes a lending/borrowing protocol | Focus on: liquidation scenarios, collateral ratio, interest calculation precision, oracle dependency, flash loan attacks. Flag liquidation thresholds as `[TBD]` if not specified |
+| Spec describes a bridge (cross-chain) | Focus on: bridge vulnerability checklist, finality on source vs destination chain, stuck/delayed transfers, replay attacks, balance attestation |
+| Spec describes staking/yield farming | Focus on: reward calculation accuracy, APY/APR display, compounding logic, unstaking cooldown, slashing conditions. Flag reward rates as `[TBD]` if not specified |
+| Spec describes NFT marketplace | Focus on: ERC-721/1155 transfer flows, royalty calculation, auction timing, bid management, metadata display, ownership verification |
+| Spec mentions wallet but no DeFi | Activate Wallet Integration checklist only — skip DeFi Security and protocol-specific checklists |
+| Spec mentions multiple chains | Generate chain-switching scenarios for each supported chain; test wrong-network detection for every chain |
+| Spec uses both Web2 auth AND wallet auth | Generate both traditional security checklist (XSS, CSRF, etc.) AND wallet integration checklist; test the boundary between Web2 session and wallet session |
 
 ---
 
@@ -609,4 +776,55 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 - MISSING: Unclear behavior when user modifies cart after reaching the payment step
 - HIGH RISK: VNPay callback must verify signature — need dedicated test case for signature tampering
 - TEST DATA: Requires VNPay sandbox credentials and test card numbers
+```
+
+---
+
+### DeFi End-to-End Example
+
+**Input:**
+
+> User uploads file `spec-dex-swap.md` with content:
+> "Token Swap feature: User connects MetaMask wallet, selects source token (ETH) and destination token (USDC), enters amount, sees price quote with slippage tolerance (default 0.5%), clicks Swap, approves token spend in wallet, confirms swap transaction in wallet, sees pending → confirmed status. Uses Uniswap V3 router. Supports Ethereum and Polygon chains."
+
+**AI-generated output:**
+
+```
+# Test Suite: DEX Token Swap
+
+> Generated from: spec-dex-swap.md
+> Prompt Version: v2.0.0
+> Model: claude-sonnet-4
+> Total Scenarios: 72
+> Coverage: Happy Path, Basic, Edge Cases, Negative, Security, DeFi Security, UI/UX, Wallet, Token, Smart Contract, Blockchain
+
+## Feature: Wallet Connection
+[... 10 scenarios: MetaMask connect, wallet not installed, wrong network, chain switch Ethereum↔Polygon, disconnect, reconnect after refresh, multiple accounts, user rejects, hardware wallet ...]
+
+## Feature: Token Selection & Amount Input
+[... 12 scenarios: token search, balance display with correct decimals (ETH=18, USDC=6), max amount button, dust amount, zero amount, insufficient balance, unknown token import, price display formatting ...]
+
+## Feature: Price Quote & Slippage
+[... 10 scenarios: quote accuracy, slippage default 0.5%, custom slippage, price impact warning >5%, stale quote refresh, exchange rate display forward/inverse, insufficient liquidity ...]
+
+## Feature: Token Approval
+[... 8 scenarios: first-time ERC-20 approve, infinite vs exact approval, revoke approval, allowance check, user rejects approval in wallet, approval tx reverted, approval gas estimation ...]
+
+## Feature: Swap Execution
+[... 18 scenarios: happy path swap, tx reverted with reason, out of gas, user rejected in wallet, pending→confirmed→success, pending→failed, speed-up tx, cancel tx, nonce management, multicall ...]
+
+## Feature: DeFi Security
+[... 14 scenarios: sandwich attack protection via slippage, front-running/MEV detection, oracle manipulation (stale Chainlink feed), slippage manipulation, reentrancy on router, token approval exploit (infinite approval drain), signature replay on different chain, private key not exposed in logs/storage, access control on admin functions ...]
+
+## 🗺️ Coverage Matrix
+[table with DeFi Security and Web3 columns]
+
+## 🚨 Risk Areas & Notes
+- HIGH RISK: Slippage default 0.5% may be insufficient during high volatility — confirm with product team
+- AMBIGUOUS: Spec does not mention MEV protection — recommend Flashbots Protect RPC option
+- MISSING: No mention of price impact threshold for large swaps — using 5% as [TBD]
+- MISSING: No mention of transaction deadline — recommend 20-minute deadline parameter
+- TEST DATA: Requires Polygon Mumbai testnet tokens and Uniswap V3 router deployed on testnet
+- # RISK: Ensure no mainnet contract addresses used in test environment
+- # REVIEW: Slippage percentage values and price impact thresholds not in spec — marked as [TBD]
 ```
