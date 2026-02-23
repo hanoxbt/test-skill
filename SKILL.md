@@ -486,6 +486,13 @@ Be **exhaustive, not superficial**. For each feature, think through:
 - **Token approval exploit** — infinite approval allows contract to drain all tokens; verify exact approval amounts and revoke flow
 - **Liquidity pool drainage** — exploit that removes disproportionate liquidity from a pool; verify balanced withdrawal checks
 
+*State manipulation & repeated actions:*
+- **Repeated withdraw/cancel drain** — user calls withdraw() or cancel() multiple times before state update completes; verify state is updated BEFORE external call (checks-effects-interactions) and add reentrancy guard/mutex
+- **Double-claim rewards** — user claims reward multiple times in same epoch/period; verify claim status is marked before transfer and cannot be re-triggered
+- **Repeated redeem exploit** — user redeems same LP token, NFT, or voucher more than once; verify token is burned/marked as redeemed before value is transferred
+- **Cancel + execute race condition** — user submits cancel and execute simultaneously, both succeed; verify mutex/lock prevents concurrent state transitions on the same order/position
+- **Withdrawal replay across chains** — user replays a withdrawal proof on a different chain or after bridge reset; verify withdrawal nonce is chain-specific and single-use
+
 *Protocol-level attacks:*
 - **Governance attack** — vote manipulation via flash-loan-funded voting power, proposal hijacking; verify snapshot-based voting and timelock
 - **Bridge vulnerability** — cross-chain message replay, incorrect balance attestation, delayed finality exploitation

@@ -106,7 +106,7 @@ If given more time, the skill would be extended in this order:
 
 ### ✅ Phase 2.5 — Web3/DeFi Support (Done in v2.0)
 - 6 new test categories: `@web3`, `@wallet`, `@defi-security`, `@smart-contract`, `@token`, `@blockchain`
-- DeFi Security checklist: 15 exploit vectors (reentrancy, flash loan, oracle, MEV, sandwich, etc.)
+- DeFi Security checklist: 20 exploit vectors (reentrancy, flash loan, oracle, MEV, sandwich, repeated withdraw/cancel drain, double-claim, etc.)
 - Wallet, Token, Smart Contract, Financial Precision, DeFi Edge Cases checklists
 - Blockchain Error Handling Map (12 error types)
 - Conditional activation — DeFi checklists only trigger when spec contains DeFi keywords

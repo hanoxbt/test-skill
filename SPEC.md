@@ -344,6 +344,11 @@ Before finishing a scenario, the AI self-checks:
 | Signature replay | Signed message replayed on different chain/context | Spec uses off-chain signatures (EIP-712, permits) |
 | Private key exposure | Key in logs, storage, URL, error messages | Any spec with wallet/key management |
 | Access control bypass | Unauthorized call to restricted functions | Contract has role-based access (onlyOwner, etc.) |
+| Repeated withdraw/cancel drain | User calls withdraw/cancel multiple times before state update | Spec has withdraw, cancel, close, or refund functions |
+| Double-claim rewards | Claim reward multiple times in same epoch | Spec has staking rewards, yield farming, or airdrop claims |
+| Repeated redeem exploit | Redeem same LP/NFT/voucher more than once | Spec has redeem, burn-to-withdraw, or voucher redemption |
+| Cancel + execute race condition | Cancel and execute both succeed on same order | Spec has order/position lifecycle (create → execute or cancel) |
+| Withdrawal replay across chains | Replay withdrawal proof on different chain | Spec involves cross-chain withdrawals or bridge claims |
 
 #### Wallet Integration Checklist (when spec involves wallet connection)
 
