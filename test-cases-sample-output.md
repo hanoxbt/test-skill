@@ -35,7 +35,7 @@ Feature: User Registration
   Scenario: New user successfully registers with valid credentials
     Given the user has not registered before
     When the user enters email "newuser@example.com"
-    And the user enters full name "Nguyen Van A"
+    And the user enters full name "John Smith"
     And the user enters password "SecurePass1!"
     And the user enters confirm password "SecurePass1!"
     And the user clicks the "Register" button
@@ -141,7 +141,7 @@ Feature: User Registration
 
   @edge-case @major
   Scenario: Registration with full name containing special unicode characters
-    Given the user enters full name "Nguyễn Văn Đức"
+    Given the user enters full name "José García"
     When the user completes the form and clicks "Register"
     Then registration succeeds
     And the name is stored and displayed correctly
