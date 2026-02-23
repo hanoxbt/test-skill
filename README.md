@@ -1,6 +1,6 @@
 # Test Case Generator Skill
 
-> **v2.0** · Claude Code Skill · Gherkin/BDD · Web2 + Web3/DeFi
+> **v2.1** · Claude Code Skill · Gherkin/BDD · Web2 + Web3/DeFi
 
 A Claude Code skill that automatically generates exhaustive, production-quality test cases in **Gherkin/BDD format** from any product specification, PRD, or requirements document — supporting **Web2, Web3, and DeFi** products.
 
@@ -11,10 +11,12 @@ A Claude Code skill that automatically generates exhaustive, production-quality 
 Paste or upload a spec (feature doc, PRD, API contract, user story) and this skill will:
 
 1. **Parse & analyze** the spec — extracting features, user roles, core flows, data inputs, business rules, and integrations
-2. **Generate test scenarios** grouped by feature, covering every test category
-3. **Output structured Gherkin** with tags, `Scenario Outline` tables, `Background` blocks, and specific assertions
-4. **Produce a Coverage Matrix** showing scenario counts per feature/category
-5. **Flag risk areas** — ambiguous requirements, high-risk flows, and recommended test data setup
+2. **Extract requirements** — number every testable requirement → Requirement Inventory
+3. **Generate test scenarios** grouped by feature, covering every test category, with `# Covers: REQ-X` traceability
+4. **Output structured Gherkin** with tags, `Scenario Outline` tables, `Background` blocks, and specific assertions
+5. **Produce a Coverage Matrix** + **Requirement Traceability Matrix** — trace every test back to its spec requirement
+6. **Generate a Security Review Report** — attack surfaces, vulnerabilities, actionable recommendations for dev team
+7. **Flag risk areas** — ambiguous requirements, high-risk flows, and recommended test data setup
 
 ---
 
@@ -24,8 +26,9 @@ Paste or upload a spec (feature doc, PRD, API contract, user story) and this ski
 1. Open Claude Code in your terminal
 2. Paste or upload your spec (spec.md, PRD, or requirements doc)
 3. Say: "write test cases for this spec"
-4. Review the generated test suite
-5. Iterate: approve, edit, or reject individual scenarios
+4. If spec is too large (>10K words) → skill stops and proposes a split plan
+5. Review the generated test suite, traceability matrix, and security report
+6. Iterate: approve, edit, or reject individual scenarios
 ```
 
 ---
@@ -70,10 +73,12 @@ This skill activates when you:
 ```
 # Test Suite: [Product/Feature Name]
 
-> Prompt Version: v2.0.0
+> Prompt Version: v2.1.0
 > Generated from: [spec file]
 > Total Scenarios: [count]
 > Coverage: [categories]
+
+## 📑 Requirement Inventory          → every testable requirement numbered [REQ-1]...[REQ-N]
 
 ## Feature: [Feature Name]
 
@@ -87,7 +92,11 @@ This skill activates when you:
   ### ⚡ Performance                  → @performance (if applicable)
   ### 🔗 Web3 / DeFi                 → @web3 @defi-security @wallet @token (if applicable)
 
+  Each scenario includes: # Covers: REQ-X traceability comment
+
 ## 🗺️ Coverage Matrix               → scenarios per feature × category
+## 🔗 Requirement Traceability Matrix → every REQ mapped to scenarios (✅ Covered / ❌ Uncovered)
+## 🛡️ Security Review Report         → attack surfaces, vulnerabilities, OWASP mapping, actionable fixes
 ## 🚨 Risk Areas & Notes            → ambiguities, high-risk flows, test data needs
 ```
 
@@ -168,7 +177,7 @@ This skill activates when you:
 
 > See [`test-cases-sample-output.md`](./test-cases-sample-output.md) for a full real-world example:
 > **79 scenarios** across 3 features (Registration, Login, Forgot Password)
-> — Coverage Matrix, Priority Distribution, and Risk Areas included.
+> — Requirement Inventory, Traceability Matrix, Coverage Matrix, Security Review Report, and Risk Areas included.
 
 ---
 

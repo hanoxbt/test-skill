@@ -1,7 +1,7 @@
 # Spec: Test Case Generator Skill
 
-**Version:** 2.0
-**Prompt Version:** v2.0.0
+**Version:** 2.1
+**Prompt Version:** v2.1.0
 **Author:** QA Team
 **Last Updated:** 2026-02-23
 **Skill File:** `test-case-generator/SKILL.md`
@@ -57,16 +57,35 @@ The skill activates when the user says things like:
 
 ---
 
-### 2.4 Input Boundaries
+### 2.4 Input Boundaries — Hard Gate
 
-To ensure stable, complete output and avoid token-limit failures when calling 3rd party AI APIs:
+**Before doing anything else**, estimate the spec size. If ANY limit is exceeded, **STOP immediately** — do not generate a single test case.
 
-| Limit | Max Value | Behavior when exceeded |
+| Check | Limit (HARD) | If exceeded |
 |---|---|---|
-| User stories / spec per run | **20** | Split into batches; process per-feature, combine at the end |
-| Spec file size | **10,000 words** | Request user to split spec by feature or module |
-| Features per run | **10** | Warn user — quality degrades; recommend feature-by-feature generation |
-| Scenarios per run | **~150** | Context window risk; split spec before proceeding |
+| Word count | **10,000 words** | STOP → tell user to split by feature/module |
+| User stories | **20 stories** | STOP → propose batch plan: which stories per batch |
+| Features | **10 features** | STOP → propose per-feature generation order |
+| Scenarios per run | **~150** | STOP → split spec before proceeding |
+
+**Hard gate protocol:**
+1. Count words / stories / features in the spec
+2. If ANY limit exceeded → output this exact message and **STOP**:
+   > ⛔ **Input too large** — [X words / Y stories / Z features] exceeds the limit of [limit].
+   > Generating from an oversized spec risks truncated or hallucinated output.
+   >
+   > **Proposed split:**
+   > - Batch 1: [Feature A, Feature B] (~X words)
+   > - Batch 2: [Feature C, Feature D] (~X words)
+   > - ...
+   >
+   > Reply "Go with batch 1" to start, or adjust the split.
+3. **Wait for user to confirm** which batch to process — do NOT proceed automatically
+4. Process one batch at a time
+5. After all batches: combine Coverage Matrices and re-number total scenarios
+
+**Borderline warning (8,000–10,000 words):** Warn but proceed. Add to Risk Notes:
+> ⚠️ Spec is near size limit ([X] words). Output quality may degrade for later sections. Consider splitting if results are incomplete.
 
 > **Why this matters for QC:** Oversized specs sent to OpenAI/Claude API risk hitting token limits mid-generation, producing **truncated or hallucinated output** with no warning. Chunking is mandatory for large specs — not optional.
 
@@ -129,7 +148,14 @@ The AI must extract the following information from the spec:
 ✅ DeFi protocol type (DEX, lending, staking, bridge, yield farming, NFT marketplace)
 ✅ Supported chains and networks (Ethereum, BSC, Polygon, Arbitrum, etc.)
 ✅ Wallet integration requirements (MetaMask, WalletConnect, etc.)
+✅ Requirements extraction — Number every distinct testable requirement: [REQ-1], [REQ-2]...[REQ-N]
 ```
+
+**Requirements extraction rules:**
+- A "requirement" = any testable statement (user can do X, system must do Y, field validates Z)
+- If the spec has numbered sections, use them: `[REQ-1.1]`, `[REQ-1.2]`
+- If not, number sequentially as you find them
+- Output a **Requirement Inventory** table before generating any tests (see Output Format in STEP 5)
 
 **If the spec is ambiguous or incomplete:**
 Do not stop to ask. Continue generating tests, then flag the missing parts in the **Risk Areas & Notes** section at the end of the output.
@@ -162,6 +188,25 @@ For each feature, the AI selects the relevant test types from the list below:
 | `@blockchain` | Chain behaviors, confirmations, reorg | When spec mentions chain, block, confirmation, mempool |
 
 **Important rule:** Never omit `@happy-path`, `@basic`, `@edge-case`, or `@negative` for any feature. These 4 types are mandatory.
+
+#### 🔗 Requirement Traceability
+
+Every Gherkin scenario **must** include a `# Covers:` comment on the line after the Scenario name, referencing which requirement(s) it validates:
+
+```gherkin
+  @happy-path @basic @critical
+  Scenario: New user successfully registers with valid credentials
+    # Covers: REQ-1, REQ-3
+    Given the user has not registered before
+    When the user enters email "newuser@example.com"
+    ...
+```
+
+**Rules:**
+- One scenario can cover multiple requirements → `# Covers: REQ-1, REQ-3, REQ-5`
+- Every requirement should be covered by at least one scenario
+- If a requirement has ZERO scenarios → flag as `❌ UNCOVERED` in the Traceability Matrix
+- Use the exact REQ IDs from the Requirement Inventory
 
 ---
 
@@ -477,7 +522,20 @@ For every smart contract interaction or blockchain operation in the spec, genera
 
 > Generated from: [spec file name or description]
 > Total Scenarios: [total count]
+> Total Requirements: [count extracted]
 > Coverage: [list of categories covered]
+
+---
+
+## 📑 Requirement Inventory
+
+| ID | Requirement | Spec Section |
+|---|---|---|
+| REQ-1 | [Testable statement extracted from spec] | [Section/heading reference] |
+| REQ-2 | ... | ... |
+| REQ-N | ... | ... |
+
+> Total: [N] requirements extracted. Each will be traced to test scenarios below.
 
 ---
 
@@ -537,6 +595,63 @@ For every smart contract interaction or blockchain operation in the spec, genera
 | 🟡 Major    | X | X% |
 | 🟢 Minor    | X | X% |
 | **Total**   | **X** | 100% |
+
+---
+
+## 🔗 Requirement Traceability Matrix
+
+| Requirement | Description | Scenarios | Status |
+|---|---|---|---|
+| REQ-1 | [requirement text] | SC-1, SC-2, SC-15 | ✅ Covered (3) |
+| REQ-2 | [requirement text] | SC-12 | ✅ Covered (1) |
+| REQ-7 | [requirement text] | — | ❌ UNCOVERED |
+| ... | ... | ... | ... |
+
+### Traceability Summary
+- Total requirements: X
+- ✅ Covered: X (X%)
+- ❌ Uncovered: X (X%) — **requires attention**
+
+---
+
+## 🛡️ Security Review Report
+
+> Auto-generated based on spec analysis. Not a penetration test — a structured review of security risks identified from the spec.
+
+### Attack Surface Summary
+
+| Surface | Risk Level | Details |
+|---|---|---|
+| [User input forms] | 🔴 High | [X text fields → injection, XSS risk] |
+| [Authentication flow] | 🔴 High | [auth method → brute force, session hijack risk] |
+| [API endpoints] | 🟡 Medium | [X POST endpoints → CSRF, rate limiting needed] |
+| [File uploads] | ⚪ N/A | [not present in this spec] |
+
+### Identified Vulnerabilities
+
+| # | Vulnerability | Severity | OWASP | Affected Feature | Recommendation |
+|---|---|---|---|---|---|
+| V-1 | [vulnerability description] | 🔴 Critical | [OWASP ref] | [feature] | [actionable fix: "Add X to Y"] |
+| V-2 | ... | 🟡 Medium | ... | ... | ... |
+
+### DeFi-Specific Security Findings (if applicable)
+
+| # | Vulnerability | Severity | Attack Vector | Recommendation |
+|---|---|---|---|---|
+| DV-1 | [finding] | 🔴 Critical | [attack type] | [specific contract-level fix] |
+
+### Recommendations for Dev Team
+
+**🔴 Fix before launch:**
+1. **[V-1]** [Specific actionable instruction]
+2. **[V-2]** [Specific actionable instruction]
+
+**🟡 Fix in next sprint:**
+3. **[V-3]** [Specific actionable instruction]
+
+**ℹ️ Security assumptions (not tested by this suite):**
+- [What the test suite does NOT cover, e.g., "DB encryption at rest handled by infra team"]
+- [External dependencies not testable, e.g., "HTTPS enforced at load balancer"]
 
 ---
 
@@ -601,6 +716,8 @@ Output is saved as a `.md` file named: `test-suite-[feature-name].md`
 | **Security coverage** | At least 3–5 security scenarios for any feature with forms, auth, or user data |
 | **Risk awareness** | Risk Notes section states ambiguities, hallucination flags, and missing info from spec |
 | **Coverage visibility** | Coverage Matrix + Priority Distribution table at the end of every output |
+| **Requirement traceability** | Every requirement has at least 1 scenario; uncovered requirements flagged in the Traceability Matrix |
+| **Security Review** | Attack surface summary and actionable vulnerability findings included in every output |
 | **DeFi coverage** | When spec is DeFi-related: at least 5 DeFi security scenarios, wallet integration scenarios, and financial precision scenarios |
 
 ### 4.3 Good vs Bad Output Examples
@@ -679,7 +796,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 **Every generation run must log the following metadata at the top of its output:**
 
 ```
-> Prompt Version: v2.0.0
+> Prompt Version: v2.1.0
 > Model: claude-sonnet-4
 > Generated at: 2026-02-23 09:00
 > Input spec: spec-auth.md
@@ -690,9 +807,9 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 
 | Change type | Version bump |
 |---|---|
-| Minor wording improvement in prompt | Patch: `v2.0.0` → `v2.0.1` |
-| New checklist item or new test category added | Minor: `v2.0.0` → `v2.1.0` |
-| Major restructure of step logic or output format | Major: `v2.0.0` → `v3.0.0` |
+| Minor wording improvement in prompt | Patch: `v2.1.0` → `v2.1.1` |
+| New checklist item or new test category added | Minor: `v2.1.0` → `v2.2.0` |
+| Major restructure of step logic or output format | Major: `v2.1.0` → `v3.0.0` |
 
 > **QC implication:** If the same spec generates different output across two runs, QC must check if the Prompt Version changed. Different prompt versions are **not comparable** — treat them as separate test suites.
 
@@ -743,6 +860,8 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 - **Hallucination self-check:** After completing all scenarios for each feature, the AI must re-scan every `Then` clause and flag with `# REVIEW: value not in spec` any assertion that contains a specific value (number, time limit, error message text, URL) not explicitly stated in the source spec
 - **Localization:** Always detect input spec language and generate test cases in the same language. Keep Gherkin keywords in English regardless. Flag any unrecognized non-English domain slang in Risk Notes
 - **Prompt version tracing:** Every output file must include the Prompt Version used to generate it, so QC can trace changes in output across different skill versions
+- **Requirement traceability — mandatory:** Every scenario must have a `# Covers: REQ-X` tag linking it to at least one requirement from the Requirement Inventory. Uncovered requirements must be flagged in the Traceability Matrix
+- **Security Review Report — mandatory:** Generate the 🛡️ Security Review Report for every spec — no exceptions. Includes attack surface summary, identified vulnerabilities with OWASP mapping, and actionable recommendations split by priority
 
 ### 🔒 Security & Privacy
 
@@ -753,7 +872,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 
 ### 📏 Input & Size
 
-- **Input size enforcement:** Reject or split specs exceeding 10,000 words or 20 features. Warn the user before proceeding. Never silently truncate a large spec
+- **Input size enforcement:** STOP immediately and propose split plan for specs exceeding 10,000 words or 20 features. Follow the Hard Gate protocol (Section 2.4). Never silently truncate a large spec
 
 ### 🔗 DeFi-Specific
 
@@ -864,7 +983,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 # Test Suite: DEX Token Swap
 
 > Generated from: spec-dex-swap.md
-> Prompt Version: v2.0.0
+> Prompt Version: v2.1.0
 > Model: claude-sonnet-4
 > Total Scenarios: 72
 > Coverage: Happy Path, Basic, Edge Cases, Negative, Security, DeFi Security, UI/UX, Wallet, Token, Smart Contract, Blockchain

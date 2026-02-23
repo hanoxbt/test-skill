@@ -7,7 +7,7 @@
 **Test Case Generator** — *From Spec to Full Test Suite in Minutes*
 
 > Takes a spec `.md` file as input → Returns a complete test case suite in Gherkin/BDD format,
-> grouped by feature, tagged by test type, with a Coverage Matrix & Risk Notes.
+> grouped by feature, tagged by test type, with Requirement Traceability, Coverage Matrix, Security Review Report & Risk Notes.
 
 ---
 
@@ -18,7 +18,7 @@
 | **Input** | A spec `.md` file (or PRD, requirements doc, pasted text) |
 | **Output** | Complete test suite — **16 categories:** Core (Happy Path · Basic · Edge Cases · Negative) · Quality (Security · UI/UX · Accessibility) · Platform (Mobile · API · Performance) · Web3/DeFi (DeFi Security · Wallet · Token · Smart Contract · Blockchain) |
 | **Format** | Gherkin/BDD — with tags, `Scenario Outline`, `Background`, `Examples` tables |
-| **Bonus output** | Coverage Matrix · Risk Areas & Notes · Ambiguity flags |
+| **Bonus output** | Requirement Inventory · Requirement Traceability Matrix · Coverage Matrix · Security Review Report · Risk Areas & Notes · Ambiguity flags |
 
 **Problems this skill solves:**
 - ✋ Writing test cases manually takes days and easily misses edge cases and security scenarios
@@ -111,19 +111,24 @@ If given more time, the skill would be extended in this order:
 - Blockchain Error Handling Map (12 error types)
 - Conditional activation — DeFi checklists only trigger when spec contains DeFi keywords
 
-### 🔜 Phase 3 — Test Report Template
+### ✅ Phase 3 — Practical Enforcement (Done in v2.1)
+- **Hard Input Size Gate** — spec exceeding limits (10K words / 20 stories / 10 features) is rejected with a split plan, not silently truncated
+- **Requirement Traceability Matrix** — every testable requirement numbered `[REQ-1]...[REQ-N]`, every scenario tagged `# Covers: REQ-X`, uncovered requirements flagged ❌
+- **Security Review Report** — attack surfaces, vulnerabilities mapped to OWASP Top 10, actionable recommendations split into "Fix before launch" / "Fix next sprint"
+
+### 🔜 Phase 4 — Test Report Template
 - After generating test cases → also generate a ready-to-use report template (QC only fills in Pass/Fail)
 - Skill auto-aggregates results into a **Test Summary Report**
 - Full pipeline: `Spec → Test Cases → Report` — zero manual writing at any stage
 
-### 🔜 Phase 4 — Multi-format Export
+### 🔜 Phase 5 — Multi-format Export
 - Export to **Excel/CSV** for direct import into TestRail / Jira Xray / Notion
 - Export to **Playwright test stubs** — skeleton code with describe/it blocks ready for QC to fill in
 
-### 🔜 Phase 5 — Spec Diff Mode
+### 🔜 Phase 6 — Spec Diff Mode
 - Feed two spec versions (v1 vs v2) → Skill detects changes and **generates only new/updated test cases**
 - Designed for regression testing when features are updated mid-sprint
 
 ---
 
-*Built by:* **QC Team** · *Platform:* Claude Code · *Version:* 2.0 · *Date:* 2026-02-23
+*Built by:* **QC Team** · *Platform:* Claude Code · *Version:* 2.1 · *Date:* 2026-02-23

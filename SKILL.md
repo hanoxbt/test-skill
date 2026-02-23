@@ -39,15 +39,34 @@ If any are found, alert the user before proceeding:
 - Contract addresses may be referenced but should use testnet deployments
 - Placeholder wallet addresses: `0x000000000000000000000000000000000000dEaD` · `0x0000000000000000000000000000000000000001`
 
-### 📏 Input Boundary Check
+### 📏 Input Size Gate (hard limit — do NOT skip)
 
-If the spec exceeds any of these limits, warn the user and propose a chunking plan — **never silently truncate**:
+**Before doing anything else**, estimate the spec size. If ANY limit is exceeded, **STOP immediately** — do not generate a single test case.
 
-| Limit | Max | Action when exceeded |
+| Check | Limit | If exceeded |
 |---|---|---|
-| User stories per run | **20** | Split into batches, combine output at the end |
-| Spec word count | **10,000 words** | Ask user to split by feature or module |
-| Features per run | **10** | Recommend per-feature generation for quality output |
+| Word count | **10,000 words** | STOP → tell user to split by feature/module |
+| User stories | **20 stories** | STOP → propose batch plan: which stories per batch |
+| Features | **10 features** | STOP → propose per-feature generation order |
+
+**Hard gate protocol:**
+1. Count words / stories / features in the spec
+2. If ANY limit exceeded → output this exact message and **STOP**:
+   > ⛔ **Input too large** — [X words / Y stories / Z features] exceeds the limit of [limit].
+   > Generating from an oversized spec risks truncated or hallucinated output.
+   >
+   > **Proposed split:**
+   > - Batch 1: [Feature A, Feature B] (~X words)
+   > - Batch 2: [Feature C, Feature D] (~X words)
+   > - ...
+   >
+   > Reply "Go with batch 1" to start, or adjust the split.
+3. **Wait for user to confirm** which batch to process — do NOT proceed automatically
+4. Process one batch at a time
+5. After all batches: combine Coverage Matrices and re-number total scenarios
+
+**Borderline warning (8,000–10,000 words):** Warn but proceed. Add to Risk Notes:
+> ⚠️ Spec is near size limit ([X] words). Output quality may degrade for later sections. Consider splitting if results are incomplete.
 
 ---
 
@@ -61,6 +80,12 @@ Before writing any tests, mentally extract:
 - **Platform targets** (web, mobile, API — infer from spec or cover all if unclear)
 - **Business rules & constraints**
 - **Integrations / external dependencies**
+- **Requirements extraction** — Number every distinct testable requirement in the spec:
+  - Format: `[REQ-1]`, `[REQ-2]`, ... `[REQ-N]`
+  - A "requirement" = any testable statement (user can do X, system must do Y, field validates Z)
+  - If the spec has numbered sections, use them: `[REQ-1.1]`, `[REQ-1.2]`
+  - If not, number sequentially as you find them
+  - Output a **Requirement Inventory** table before generating any tests (see Output Format)
 
 ---
 
@@ -124,11 +149,33 @@ Assign a **priority tag** to every scenario based on business impact:
 
 *DeFi-specific:*
 - Every `@defi-security` scenario → always `@critical`
+
 - Every `@token` scenario involving fund movement → always `@critical`
 - Token approval/allowance scenarios → always `@critical` (infinite approval = security risk)
 - `@wallet` connection scenarios → `@major` minimum
 - Gas estimation and price display → `@major`
 - `@blockchain` confirmation/state scenarios → `@major`
+
+---
+
+### 🔗 Requirement Traceability
+
+Every Gherkin scenario **must** include a `# Covers:` comment on the line after the Scenario name, referencing which requirement(s) it validates:
+
+```gherkin
+  @happy-path @basic @critical
+  Scenario: New user successfully registers with valid credentials
+    # Covers: REQ-1, REQ-3
+    Given the user has not registered before
+    When the user enters email "newuser@example.com"
+    ...
+```
+
+**Rules:**
+- One scenario can cover multiple requirements → `# Covers: REQ-1, REQ-3, REQ-5`
+- Every requirement should be covered by at least one scenario
+- If a requirement has ZERO scenarios → flag as `❌ UNCOVERED` in the Traceability Matrix
+- Use the exact REQ IDs from the Requirement Inventory
 
 ---
 
@@ -139,11 +186,24 @@ Structure the output as follows:
 ```
 # Test Suite: [Product/Feature Name]
 
-> Prompt Version: v2.0.0
+> Prompt Version: v2.1.0
 > Generated from: [spec file name or description]
 > Model: [claude-sonnet-4 / gpt-4o / etc.]
 > Total Scenarios: [count]
+> Total Requirements: [count extracted]
 > Coverage: [list categories covered]
+
+---
+
+## 📑 Requirement Inventory
+
+| ID | Requirement | Spec Section |
+|---|---|---|
+| REQ-1 | [Testable statement extracted from spec] | [Section/heading reference] |
+| REQ-2 | ... | ... |
+| REQ-N | ... | ... |
+
+> Total: [N] requirements extracted. Each will be traced to test scenarios below.
 
 ---
 
@@ -169,6 +229,7 @@ Feature: [Feature Name]
 
   @happy-path @basic @critical
   Scenario: [Clear descriptive name]
+    # Covers: REQ-1, REQ-3
     Given [initial context/state]
     When [action performed]
     Then [expected outcome]
@@ -290,6 +351,63 @@ Feature: [Feature Name]
 | 🟡 Major    | X | X% |
 | 🟢 Minor    | X | X% |
 | **Total**   | **X** | 100% |
+
+---
+
+## 🔗 Requirement Traceability Matrix
+
+| Requirement | Description | Scenarios | Status |
+|---|---|---|---|
+| REQ-1 | [requirement text] | SC-1, SC-2, SC-15 | ✅ Covered (3) |
+| REQ-2 | [requirement text] | SC-12 | ✅ Covered (1) |
+| REQ-7 | [requirement text] | — | ❌ UNCOVERED |
+| ... | ... | ... | ... |
+
+### Traceability Summary
+- Total requirements: X
+- ✅ Covered: X (X%)
+- ❌ Uncovered: X (X%) — **requires attention**
+
+---
+
+## 🛡️ Security Review Report
+
+> Auto-generated based on spec analysis. Not a penetration test — a structured review of security risks identified from the spec.
+
+### Attack Surface Summary
+
+| Surface | Risk Level | Details |
+|---|---|---|
+| [User input forms] | 🔴 High | [X text fields → injection, XSS risk] |
+| [Authentication flow] | 🔴 High | [auth method → brute force, session hijack risk] |
+| [API endpoints] | 🟡 Medium | [X POST endpoints → CSRF, rate limiting needed] |
+| [File uploads] | ⚪ N/A | [not present in this spec] |
+
+### Identified Vulnerabilities
+
+| # | Vulnerability | Severity | OWASP | Affected Feature | Recommendation |
+|---|---|---|---|---|---|
+| V-1 | [vulnerability description] | 🔴 Critical | [OWASP ref] | [feature] | [actionable fix: "Add X to Y"] |
+| V-2 | ... | 🟡 Medium | ... | ... | ... |
+
+### DeFi-Specific Security Findings (if applicable)
+
+| # | Vulnerability | Severity | Attack Vector | Recommendation |
+|---|---|---|---|---|
+| DV-1 | [finding] | 🔴 Critical | [attack type] | [specific contract-level fix] |
+
+### Recommendations for Dev Team
+
+**🔴 Fix before launch:**
+1. **[V-1]** [Specific actionable instruction]
+2. **[V-2]** [Specific actionable instruction]
+
+**🟡 Fix in next sprint:**
+3. **[V-3]** [Specific actionable instruction]
+
+**ℹ️ Security assumptions (not tested by this suite):**
+- [What the test suite does NOT cover, e.g., "DB encryption handled by infra team"]
+- [External dependencies, e.g., "HTTPS enforced at load balancer"]
 
 ---
 
@@ -528,6 +646,31 @@ Be **exhaustive, not superficial**. For each feature, think through:
 *Boundaries:*
 - Dust prevention — minimum transfer/swap amount enforced; amounts below dust threshold rejected
 - Maximum supply boundary — cannot mint/transfer beyond token's totalSupply
+
+---
+
+## Security Review Report Rules
+
+Generate the 🛡️ Security Review Report for **every spec — no exceptions**. Follow these rules:
+
+**Attack surface identification:**
+- Scan the spec for: input fields, auth flows, API endpoints, file handling, payment/fund flows, external integrations, wallet connections
+- For each surface, assess risk level: 🔴 High / 🟡 Medium / 🟢 Low / ⚪ N/A
+- Mark as ⚪ N/A if the surface is not present in the spec (e.g., no file upload)
+
+**Vulnerability identification:**
+- Map findings to OWASP Top 10 (2021) where possible (e.g., A01:2021 Broken Access Control)
+- Severity: 🔴 Critical / 🟡 Medium / 🟢 Low — based on exploitability + impact
+- For DeFi specs: add a separate "DeFi-Specific Security Findings" table with contract-level findings
+
+**Recommendations must be actionable:**
+- ✅ Good: "Add rate limiter on `/api/login` — max 5 req/min per IP, return 429 with Retry-After header"
+- ❌ Bad: "Consider improving rate limiting"
+- Split into: "Fix before launch" (Critical) and "Fix next sprint" (Medium/Low)
+
+**Security assumptions:**
+- List what the test suite does NOT cover (e.g., "DB encryption at rest handled by infra team")
+- List external dependencies not testable in this context (e.g., "HTTPS enforced at load balancer")
 
 ---
 
