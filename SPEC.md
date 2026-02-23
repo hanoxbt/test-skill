@@ -10,7 +10,7 @@
 
 ## 1. Objective
 
-This skill enables AI to automatically generate exhaustive, production-quality test cases from any product specification document (spec, PRD, requirements doc). Output follows the Gherkin/BDD standard, grouped by feature and tagged by test type.
+This skill enables AI to automatically generate exhaustive, production-quality test cases from **any product specification document** — regardless of format (PRD, API contract, user stories, bullet-point requirements, compliance doc, narrative) or domain (web, mobile, API, CLI, IoT, ML/AI, desktop, game, DeFi/Web3). Output follows the Gherkin/BDD standard, grouped by feature and tagged by test type.
 
 **Problems this skill solves:**
 - QA engineers spend many hours manually reading specs and writing test cases
@@ -131,15 +131,42 @@ Test cases must always use **testnet addresses** and known burn addresses (e.g.,
 
 > **Goal:** Fully understand the spec before writing any test cases.
 
+**Spec Format Adaptation (handle ANY spec type):**
+
+| Spec format | How to extract features |
+|---|---|
+| Standard feature doc / PRD | Use feature sections directly |
+| API contract (OpenAPI, Swagger) | Each endpoint group = 1 feature |
+| User story cards / Jira tickets | Each story = 1 feature; group related stories |
+| Bullet-point requirements | Group by topic into features |
+| Compliance / regulatory doc | Each regulation = 1 requirement; group by domain into features |
+| Narrative / prose doc | Extract testable statements → group by topic |
+
+> If the spec has no explicit feature grouping, create feature headings by topic. Flag in Risk Notes: `MISSING: features inferred from content.`
+
+**Domain Detection — adapt core categories:**
+
+The 10 core test categories apply to ALL software types. The AI must detect the spec's domain and adapt:
+- **API / backend only** → skip `@ui`/`@ux` unless the API has a dashboard
+- **CLI tool** → `@ui` becomes command-line output; `@ux` becomes help text, flags, error messages
+- **IoT / embedded** → `@mobile` becomes device connectivity; `@performance` becomes resource constraints
+- **ML / AI** → `@performance` becomes model accuracy/latency; `@edge-case` includes adversarial data
+- **Game / real-time** → `@performance` becomes FPS/latency; `@security` includes cheat prevention
+- **DeFi / Web3** → activate 6 additional DeFi categories (see DeFi checklists below)
+
+> Skip a category only if genuinely N/A. Note in Coverage Matrix: `N/A — [reason]`.
+
+**Extraction checklist:**
+
 The AI must extract the following information from the spec:
 
 ```
-✅ List of Features / Modules (used for grouping tests)
-✅ User roles / actors (admin, user, guest, etc.)
+✅ List of Features / Modules (used for grouping tests — see Spec Format Adaptation above)
+✅ User roles / actors (admin, user, guest — if none found, use "System" / "User" as defaults)
 ✅ Main happy path for each feature
 ✅ Input fields and validation rules
 ✅ Business rules and constraints
-✅ Platform targets (web / mobile / API)
+✅ Platform targets (web / mobile / API / CLI / IoT — infer from spec or cover all if unclear)
 ✅ External dependencies / integrations
 ✅ Non-functional requirements (performance, security, accessibility)
 ✅ Blockchain/DeFi indicators (wallet, token, smart contract, chain references)

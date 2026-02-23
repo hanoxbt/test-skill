@@ -1,8 +1,8 @@
 # Test Case Generator Skill
 
-> **v2.1** · Claude Code Skill · Gherkin/BDD · Web2 + Web3/DeFi
+> **v2.1** · Claude Code Skill · Gherkin/BDD · Any Spec, Any Domain
 
-A Claude Code skill that automatically generates exhaustive, production-quality test cases in **Gherkin/BDD format** from any product specification, PRD, or requirements document — supporting **Web2, Web3, and DeFi** products.
+A Claude Code skill that automatically generates exhaustive, production-quality test cases in **Gherkin/BDD format** from any product specification — regardless of format (PRD, API contract, user stories, compliance doc) or domain (web, mobile, API, CLI, IoT, ML/AI, desktop, game, DeFi/Web3).
 
 ---
 
@@ -37,9 +37,9 @@ Paste or upload a spec (feature doc, PRD, API contract, user story) and this ski
 
 This skill activates when you:
 
-- Upload or paste a `spec.md`, PRD, or requirements doc and ask for test cases
+- Upload or paste a spec (`.md`, PRD, API contract, user stories, bullet-point requirements, or any doc) and ask for test cases
 - Say things like *"write tests for this spec"*, *"generate QA cases"*, *"cover this feature with tests"*, *"what should I test?"*, *"create test scenarios from this doc"*
-- Paste a spec and ask for testing help — for web apps, mobile apps, APIs, DeFi protocols, or full-stack products
+- Paste a spec and ask for testing help — works for web apps, mobile apps, APIs, CLI tools, IoT, ML/AI, desktop, games, DeFi protocols, or any software product
 
 ---
 

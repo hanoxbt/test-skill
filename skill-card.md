@@ -15,7 +15,7 @@
 
 | | Details |
 |---|---|
-| **Input** | A spec `.md` file (or PRD, requirements doc, pasted text) |
+| **Input** | Any spec (`.md`, PRD, API contract, user stories, compliance doc, bullet-point requirements, pasted text) |
 | **Output** | Complete test suite — **16 categories:** Core (Happy Path · Basic · Edge Cases · Negative) · Quality (Security · UI/UX · Accessibility) · Platform (Mobile · API · Performance) · Web3/DeFi (DeFi Security · Wallet · Token · Smart Contract · Blockchain) |
 | **Format** | Gherkin/BDD — with tags, `Scenario Outline`, `Background`, `Examples` tables |
 | **Bonus output** | Requirement Inventory · Requirement Traceability Matrix · Coverage Matrix · Security Review Report · Risk Areas & Notes · Ambiguity flags |
@@ -91,8 +91,8 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 | **No automation code** | Output is Gherkin spec only, not Cypress/Playwright scripts — a separate step is needed for test automation |
 | **Domain-specific rules** | The skill doesn't know project-specific business rules unless they are explicitly stated in the spec |
 | **Human review still needed** | Output should be reviewed and extended by a QC for project-specific edge cases |
-| **Large specs** | Very long specs (200+ pages) may need to be split by feature before feeding in |
-| **DeFi specificity** | DeFi checklists require the spec to explicitly mention protocols, attack vectors, and chain details — the skill flags gaps but cannot invent protocol-specific business logic |
+| **Large specs** | Specs exceeding 10,000 words or 10 features must be split — the skill stops and proposes a batch plan automatically |
+| **Domain-specific depth** | For specialized domains (IoT, ML/AI, DeFi, game), the skill applies general test categories and flags domain-specific gaps in Risk Notes — it cannot invent protocol or domain-specific business logic not stated in the spec |
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: test-case-generator
-description: Generate comprehensive test cases in Gherkin/BDD format from any product spec, PRD, or requirements document. Use this skill whenever the user uploads or pastes a spec.md, PRD, requirements doc, or any product specification and wants to generate test cases, test scenarios, QA coverage, or a test plan. Trigger even if the user says things like "write tests for this spec", "generate QA cases", "cover this feature with tests", "what should I test?", "create test scenarios from this doc", or just pastes a spec and asks for testing help. Always use this skill when any kind of spec/requirements + test generation is involved — for web apps, mobile apps, APIs, DeFi protocols, Web3 dApps, or full-stack products.
+description: Generate comprehensive test cases in Gherkin/BDD format from any product spec, PRD, or requirements document — for any domain (web, mobile, API, CLI, IoT, ML/AI, desktop, game, DeFi/Web3). Use this skill whenever the user uploads or pastes a spec.md, PRD, requirements doc, API contract, user stories, or any product specification and wants to generate test cases, test scenarios, QA coverage, or a test plan. Trigger even if the user says things like "write tests for this spec", "generate QA cases", "cover this feature with tests", "what should I test?", "create test scenarios from this doc", or just pastes a spec and asks for testing help. Always use this skill when any kind of spec/requirements + test generation is involved.
 ---
 
 # Test Case Generator Skill
@@ -72,12 +72,48 @@ If any are found, alert the user before proceeding:
 
 ## Step 1: Parse & Analyze the Spec
 
+### 🔍 Spec Format Adaptation (handle ANY spec type)
+
+First, identify the spec format and adapt your extraction strategy:
+
+| Spec format | How to extract features |
+|---|---|
+| **Standard feature doc / PRD** | Use feature sections directly |
+| **API contract (OpenAPI, Swagger, REST doc)** | Each endpoint group = 1 feature (e.g., `/users/*` = User Management) |
+| **User story cards / Jira tickets** | Each story = 1 feature; group related stories |
+| **Bullet-point requirements** | Group by topic into features (e.g., all auth bullets = Authentication feature) |
+| **Compliance / regulatory doc** | Each regulation or control = 1 requirement; group by domain into features |
+| **Narrative / prose doc** | Extract testable statements → group by topic into features |
+| **Architecture / design doc** | Extract system behaviors described → treat each component as a feature |
+
+> **If the spec has NO clear features:** Group testable statements by topic and create feature headings yourself. Flag in Risk Notes: `MISSING: Spec has no explicit feature grouping — features inferred from content.`
+
+### 🌐 Domain Detection
+
+The 10 core test categories (`@happy-path`, `@basic`, `@edge-case`, `@negative`, `@security`, `@ui`/`@ux`, `@accessibility`, `@mobile`, `@api`, `@performance`) apply to **ALL software types**. Adapt them to the spec's domain:
+
+| Domain | How to adapt core categories |
+|---|---|
+| **Web app / SaaS** | Standard — all categories apply directly |
+| **Mobile app** | Emphasize `@mobile` (touch, gestures, offline, orientation) |
+| **API / backend** | Emphasize `@api`, `@performance`, `@security`; skip `@ui`/`@ux` unless API has a dashboard |
+| **CLI tool** | `@ui` → command-line output/formatting; `@ux` → help text, flags, error messages |
+| **Desktop app** | `@mobile` → window resizing, multi-monitor; rest applies directly |
+| **IoT / embedded** | `@mobile` → device connectivity; `@performance` → resource constraints, latency; `@security` → firmware, OTA updates |
+| **ML / AI pipeline** | `@performance` → model accuracy, latency, throughput; `@edge-case` → data edge cases (empty, corrupted, adversarial); `@security` → prompt injection, data poisoning |
+| **Game / real-time** | `@performance` → FPS, tick rate, latency; `@edge-case` → state desync, race conditions; `@security` → cheat prevention |
+| **DeFi / Web3** | Activate 6 additional DeFi categories (see DeFi conditional checklists below) |
+
+> **Skip a category only if it is genuinely N/A** for the spec's domain (e.g., `@mobile` for a pure backend API). When skipping, note in Coverage Matrix: `N/A — [reason]`.
+
+### 📋 Extraction Checklist
+
 Before writing any tests, mentally extract:
-- **Features / Modules** described (group your tests by these)
-- **User roles / actors** involved
+- **Features / Modules** described (group your tests by these — see Spec Format Adaptation above)
+- **User roles / actors** involved (if none → use "System" / "User" as defaults)
 - **Core flows** (what's the happy path?)
 - **Data inputs & validations** mentioned
-- **Platform targets** (web, mobile, API — infer from spec or cover all if unclear)
+- **Platform targets** (web, mobile, API, CLI, IoT — infer from spec or cover all if unclear)
 - **Business rules & constraints**
 - **Integrations / external dependencies**
 - **Requirements extraction** — Number every distinct testable requirement in the spec:
