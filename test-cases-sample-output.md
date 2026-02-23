@@ -1,6 +1,8 @@
 # Test Suite: User Authentication Module
 
+> Prompt Version: v1.2.0
 > Generated from: `spec-auth.md`
+> Model: claude-sonnet-4
 > Total Scenarios: 79
 > Coverage: Happy Path, Basic, Edge Cases, Negative, Security, UI/UX, Accessibility, Mobile, API
 
