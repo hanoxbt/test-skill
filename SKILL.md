@@ -40,6 +40,38 @@ For **each feature/module**, generate tests across ALL these categories. Tag eve
 
 ---
 
+### ⚡ Mandatory Coverage Rule
+
+For **every** feature, these 4 types are **non-negotiable** — include them regardless of spec completeness:
+
+| Type | Tag | Why mandatory |
+|---|---|---|
+| Happy Path | `@happy-path` | Must prove the system works before proving it fails |
+| Basic | `@basic` | Core CRUD / functionality must always be verified |
+| Edge Cases | `@edge-case` | Boundary conditions always exist, even if not specified |
+| Negative | `@negative` | Must prove the system handles failure correctly |
+
+---
+
+### 🎯 Priority Assignment
+
+Assign a **priority tag** to every scenario based on business impact:
+
+| Priority | Tag | Assign When |
+|---|---|---|
+| **Critical** | `@critical` | Core happy path · Security vulnerabilities · Auth/session flows · Data integrity · Payment/transaction flows |
+| **Major** | `@major` | Important negative cases · API contracts · Significant edge cases · Account management flows |
+| **Minor** | `@minor` | UI/UX polish · Accessibility · Low-risk edge cases · Performance (non-SLA critical) |
+
+**Quick assignment rules:**
+- Every `@security` scenario → always `@critical`
+- Core `@happy-path` scenarios → always `@critical`
+- `@api` scenarios for core endpoints → `@major` minimum
+- `@ui` `@ux` `@accessibility` scenarios → `@minor` (unless the UI issue blocks the user entirely)
+- When in doubt → default to `@major`
+
+---
+
 ## Step 3: Output Format
 
 Structure the output as follows:
@@ -73,14 +105,14 @@ Feature: [Feature Name]
     Given [common precondition]
     And [another precondition if needed]
 
-  @happy-path @basic
+  @happy-path @basic @critical
   Scenario: [Clear descriptive name]
     Given [initial context/state]
     When [action performed]
     Then [expected outcome]
     And [additional assertion]
 
-  @happy-path @basic
+  @happy-path @basic @critical
   Scenario Outline: [Parameterized scenario name]
     Given [context with <variable>]
     When [action with <input>]
@@ -158,11 +190,20 @@ Feature: [Feature Name]
 
 ## 🗺️ Coverage Matrix
 
-| Feature | Happy Path | Edge Cases | Negative | Security | UI/UX | Mobile | API | Total |
-|---------|-----------|-----------|----------|----------|-------|--------|-----|-------|
-| [F1]    | ✅ X      | ✅ X      | ✅ X    | ✅ X    | ✅ X | ✅ X  | ✅ X| X    |
-| [F2]    | ...       |           |          |          |       |        |     |       |
-| **Total** | X | X | X | X | X | X | X | **X** |
+| Feature | Happy Path | Edge Cases | Negative | Security | UI/UX | A11y | Mobile | API | Total |
+|---------|-----------|-----------|----------|----------|-------|------|--------|-----|-------|
+| [F1]    | ✅ X      | ✅ X      | ✅ X    | ✅ X    | ✅ X | ✅ X | ✅ X  | ✅ X| X    |
+| [F2]    | ...       |           |          |          |       |      |        |     |       |
+| **Total** | X | X | X | X | X | X | X | X | **X** |
+
+### Priority Distribution
+
+| Priority | Count | % |
+|---|---|---|
+| 🔴 Critical | X | X% |
+| 🟡 Major    | X | X% |
+| 🟢 Minor    | X | X% |
+| **Total**   | **X** | 100% |
 
 ---
 
@@ -246,3 +287,4 @@ Be **exhaustive, not superficial**. For each feature, think through:
 - Avoid vague assertions like "Then the page works" — be specific: "Then the error message 'Password must be at least 8 characters' is displayed below the password field"
 - Include `Background` blocks for shared preconditions within a feature
 - Flag scenarios that require specific test data or environment setup with a `# Note:` comment
+- Every scenario must have exactly **one** priority tag: `@critical`, `@major`, or `@minor` — no scenario should be untagged for priority
