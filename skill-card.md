@@ -75,12 +75,14 @@ Spec → Feed into Claude Code + Skill → Review output → Done
 
 | Tool | Role |
 |---|---|
-| **Claude Code** | Platform running the skill — feed spec, receive output |
-| **Claude Sonnet** | AI model processing the spec and generating test cases |
+| **Claude Code** | Primary platform running the skill — feed spec, receive output |
+| **Claude** (Anthropic) | AI model — spec analysis, test case generation, security review |
+| **Antigravity** | AI platform — alternative runtime for skill execution |
+| **Gemini** (Google) | AI model — cross-validation and alternative generation |
 | **Markdown** | Output format — portable, version-controllable, shareable |
 
-> The skill runs entirely on **Claude Code** — no deployment, no backend, no extra accounts needed.
-> Feed the spec → get output directly in the terminal.
+> The skill is **model-agnostic** — tested on Claude, Antigravity, and Gemini.
+> Feed the spec → get output directly in the terminal. No deployment, no backend, no extra accounts needed.
 
 ---
 
@@ -132,4 +134,4 @@ If given more time, the skill would be extended in this order:
 
 ---
 
-*Built by:* **QC Team** · *Platform:* Claude Code · *Version:* 2.1 · *Date:* 2026-02-23
+*Built by:* **QC Team** · *AI:* Claude · Antigravity · Gemini · *Version:* 2.1 · *Date:* 2026-02-23
