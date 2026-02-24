@@ -582,25 +582,54 @@ For every smart contract interaction or blockchain operation in the spec, genera
 
 ### Identified Vulnerabilities
 
-| # | Vulnerability | Severity | OWASP | Affected Feature | Recommendation |
-|---|---|---|---|---|---|
-| V-1 | [vulnerability description] | 🔴 Critical | [OWASP ref] | [feature] | [actionable fix: "Add X to Y"] |
-| V-2 | ... | 🟡 Medium | ... | ... | ... |
+| # | Vulnerability | Severity | Feature |
+|---|---|:---:|---|
+| V-1 | [short vulnerability name] | 🔴 Critical | [feature] |
+| V-2 | [short vulnerability name] | 🟡 Medium | [feature] |
+
+> 🔴 Critical: **X** · 🟡 Medium: **Y**
+
+<details>
+<summary>Click to expand OWASP mapping & fix recommendations</summary>
+
+| # | OWASP | Recommendation |
+|---|---|---|
+| V-1 | [OWASP ref] | [actionable fix: "Add X to Y"] |
+| V-2 | [OWASP ref] | [actionable fix] |
+
+</details>
 
 ### DeFi-Specific Security Findings (if applicable)
 
-| # | Vulnerability | Severity | Attack Vector | Recommendation |
-|---|---|---|---|---|
-| DV-1 | [finding] | 🔴 Critical | [attack type] | [specific contract-level fix] |
+| # | Vulnerability | Severity | Attack Vector |
+|---|---|:---:|---|
+| DV-1 | [short finding name] | 🔴 Critical | [attack type] |
+
+> 🔴 Critical: **X** · 🟡 Medium: **Y**
+
+<details>
+<summary>Click to expand fix recommendations</summary>
+
+| # | Recommendation |
+|---|---|
+| DV-1 | [specific contract-level fix] |
+
+</details>
 
 ### Recommendations for Dev Team
 
 **🔴 Fix before launch:**
-1. **[V-1]** [Specific actionable instruction]
-2. **[V-2]** [Specific actionable instruction]
+
+| # | Ref | Action |
+|:---:|---|---|
+| 1 | V-1 | [Specific actionable instruction] |
+| 2 | V-2 | [Specific actionable instruction] |
 
 **🟡 Fix in next sprint:**
-3. **[V-3]** [Specific actionable instruction]
+
+| # | Ref | Action |
+|:---:|---|---|
+| 3 | V-3 | [Specific actionable instruction] |
 
 **ℹ️ Security assumptions (not tested by this suite):**
 - [What the test suite does NOT cover, e.g., "DB encryption at rest handled by infra team"]

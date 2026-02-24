@@ -1332,47 +1332,91 @@ Feature: Wallet Integration
 
 ### Identified Vulnerabilities
 
-| # | Vulnerability | Severity | OWASP | Affected Feature | Recommendation |
-|---|---|---|---|---|---|
-| V-1 | Reentrancy on settleOffer/cancelOffer/claimCollateral | 🔴 Critical | A01:2021 Broken Access Control | Smart Contract | Implement ReentrancyGuard (OpenZeppelin) on all state-changing functions. Use checks-effects-interactions pattern |
-| V-2 | Repeated cancel/claim drain — multiple calls before state update | 🔴 Critical | A01:2021 Broken Access Control | Smart Contract | Use mutex lock + update state BEFORE external call. Add boolean flag "claimed"/"cancelled" check at function entry |
-| V-3 | Cancel + Settle race condition | 🔴 Critical | A04:2021 Insecure Design | Smart Contract | Implement mutex lock on offer state. Both settle and cancel must check-and-set offer.status atomically |
-| V-4 | Admin privilege escalation — single admin triggers settlement | 🔴 Critical | A01:2021 Broken Access Control | Settlement | Add multi-sig requirement for admin actions. Implement timelock (24h delay) for critical admin functions |
-| V-5 | Front-running / MEV on acceptOffer | 🟡 Medium | A04:2021 Insecure Design | Pre-Market | Implement commit-reveal scheme or integrate private mempool (Flashbots/Jito) |
-| V-6 | Cross-chain signature replay (Solana ↔ EVM) | 🔴 Critical | A02:2021 Cryptographic Failures | Multi-chain | Include chainId in signed data (EIP-712 for EVM). Verify chain-specific nonce on each chain |
-| V-7 | Integer overflow on amount × price calculation | 🟡 Medium | A03:2021 Injection | Smart Contract | Use Solidity ≥0.8.0 (built-in overflow protection) or SafeMath. Validate input ranges |
-| V-8 | XSS in token name/symbol display | 🟡 Medium | A03:2021 Injection | OTC Market | Escape HTML entities before rendering token metadata. Use content security policy |
-| V-9 | IDOR — accessing trade details via sequential ID | 🟡 Medium | A01:2021 Broken Access Control | API | Use UUID instead of sequential ID. Verify ownership before returning sensitive data |
-| V-10 | Flash loan collateral manipulation | 🔴 Critical | A04:2021 Insecure Design | Pre-Market | Lock collateral permanently (no withdrawal in same block). Verify collateral source |
+| # | Vulnerability | Severity | Feature |
+|---|---|:---:|---|
+| V-1 | Reentrancy on settle/cancel/claim | 🔴 Critical | Smart Contract |
+| V-2 | Repeated cancel/claim drain | 🔴 Critical | Smart Contract |
+| V-3 | Cancel + Settle race condition | 🔴 Critical | Smart Contract |
+| V-4 | Admin privilege escalation | 🔴 Critical | Settlement |
+| V-5 | Front-running / MEV on acceptOffer | 🟡 Medium | Pre-Market |
+| V-6 | Cross-chain signature replay | 🔴 Critical | Multi-chain |
+| V-7 | Integer overflow on amount × price | 🟡 Medium | Smart Contract |
+| V-8 | XSS in token name/symbol display | 🟡 Medium | OTC Market |
+| V-9 | IDOR — sequential offer ID | 🟡 Medium | API |
+| V-10 | Flash loan collateral manipulation | 🔴 Critical | Pre-Market |
+
+> 🔴 Critical: **6** · 🟡 Medium: **4**
+
+<details>
+<summary>Click to expand OWASP mapping & fix recommendations</summary>
+
+| # | OWASP | Recommendation |
+|---|---|---|
+| V-1 | A01:2021 Broken Access Control | Implement ReentrancyGuard (OpenZeppelin) on all state-changing functions. Use checks-effects-interactions pattern |
+| V-2 | A01:2021 Broken Access Control | Use mutex lock + update state BEFORE external call. Add boolean flag "claimed"/"cancelled" check at function entry |
+| V-3 | A04:2021 Insecure Design | Implement mutex lock on offer state. Both settle and cancel must check-and-set offer.status atomically |
+| V-4 | A01:2021 Broken Access Control | Add multi-sig requirement for admin actions. Implement timelock (24h delay) for critical admin functions |
+| V-5 | A04:2021 Insecure Design | Implement commit-reveal scheme or integrate private mempool (Flashbots/Jito) |
+| V-6 | A02:2021 Cryptographic Failures | Include chainId in signed data (EIP-712 for EVM). Verify chain-specific nonce on each chain |
+| V-7 | A03:2021 Injection | Use Solidity ≥0.8.0 (built-in overflow protection) or SafeMath. Validate input ranges |
+| V-8 | A03:2021 Injection | Escape HTML entities before rendering token metadata. Use content security policy |
+| V-9 | A01:2021 Broken Access Control | Use UUID instead of sequential ID. Verify ownership before returning sensitive data |
+| V-10 | A04:2021 Insecure Design | Lock collateral permanently (no withdrawal in same block). Verify collateral source |
+
+</details>
 
 ### DeFi-Specific Security Findings
 
-| # | Vulnerability | Severity | Attack Vector | Recommendation |
-|---|---|---|---|---|
-| DV-1 | Reentrancy on 3 fund-moving functions | 🔴 Critical | External call before state update | ReentrancyGuard + checks-effects-interactions on settleOffer, cancelOffer, claimCollateral |
-| DV-2 | Repeated cancel drain | 🔴 Critical | Calling cancelOffer multiple times in same block | Boolean flag `offer.cancelled = true` check at function entry, set before external call |
-| DV-3 | Cancel + Settle race | 🔴 Critical | Submit both simultaneously | Mutex lock on offer status — state transition only valid: Open→Accepted→Settled/Cancelled/Defaulted |
-| DV-4 | Flash loan collateral | 🔴 Critical | Borrow → deposit → withdraw in 1 tx | Prevent collateral withdrawal in the same block as deposit |
-| DV-5 | MEV front-running on acceptOffer | 🟡 Medium | Mempool observation | Commit-reveal or private mempool integration |
-| DV-6 | Admin rugpull potential | 🔴 Critical | Admin can pause + drain | Multi-sig + timelock + cap fee changes + no admin withdrawal |
-| DV-7 | Cross-chain replay | 🔴 Critical | Replay tx on another chain | Chain-specific nonce + EIP-712 domain separator |
-| DV-8 | Oracle manipulation (if collateral valuation uses oracle) | 🟡 Medium | Stale/manipulated price feed | Multi-source oracle + staleness check + TWAP |
+| # | Vulnerability | Severity | Attack Vector |
+|---|---|:---:|---|
+| DV-1 | Reentrancy on 3 fund-moving functions | 🔴 Critical | External call before state update |
+| DV-2 | Repeated cancel drain | 🔴 Critical | cancelOffer called multiple times in same block |
+| DV-3 | Cancel + Settle race | 🔴 Critical | Submit both simultaneously |
+| DV-4 | Flash loan collateral | 🔴 Critical | Borrow → deposit → withdraw in 1 tx |
+| DV-5 | MEV front-running on acceptOffer | 🟡 Medium | Mempool observation |
+| DV-6 | Admin rugpull potential | 🔴 Critical | Admin can pause + drain |
+| DV-7 | Cross-chain replay | 🔴 Critical | Replay tx on another chain |
+| DV-8 | Oracle manipulation | 🟡 Medium | Stale/manipulated price feed |
+
+> 🔴 Critical: **6** · 🟡 Medium: **2**
+
+<details>
+<summary>Click to expand fix recommendations</summary>
+
+| # | Recommendation |
+|---|---|
+| DV-1 | ReentrancyGuard + checks-effects-interactions on settleOffer, cancelOffer, claimCollateral |
+| DV-2 | Boolean flag `offer.cancelled = true` check at function entry, set before external call |
+| DV-3 | Mutex lock on offer status — state transition only valid: Open→Accepted→Settled/Cancelled/Defaulted |
+| DV-4 | Prevent collateral withdrawal in the same block as deposit |
+| DV-5 | Commit-reveal or private mempool integration |
+| DV-6 | Multi-sig + timelock + cap fee changes + no admin withdrawal |
+| DV-7 | Chain-specific nonce + EIP-712 domain separator |
+| DV-8 | Multi-source oracle + staleness check + TWAP |
+
+</details>
 
 ### Recommendations for Dev Team
 
 **🔴 Fix before launch:**
-1. **[V-1, DV-1]** Add `ReentrancyGuard` (OpenZeppelin) to all 6 functions in WhalesEscrow. Apply checks-effects-interactions pattern: update state → emit event → transfer funds
-2. **[V-2, DV-2]** Add boolean `claimed`/`cancelled` flag. Check flag at function entry, set flag BEFORE external call. Example: `require(!offer.claimed); offer.claimed = true; transfer()`
-3. **[V-3, DV-3]** Implement strict state machine: `Open → Accepted → {Settled | Cancelled | Defaulted}`. Each transition checks current state before changing. Use enum for status
-4. **[V-4, DV-6]** Admin functions must go through multi-sig (3/5 minimum). Add 48h timelock for: fee changes, contract pause, fund withdrawal. Log all admin actions on-chain
-5. **[V-6, DV-7]** Include `chainId` in signed data. EVM: use EIP-712 domain separator. Solana: include cluster identifier in instruction data
-6. **[V-10, DV-4]** Prevent collateral withdrawal in the same block as deposit. Add minimum lock duration (at least 1 block)
+
+| # | Ref | Action |
+|:---:|---|---|
+| 1 | V-1, DV-1 | Add `ReentrancyGuard` to all 6 functions. Checks-effects-interactions: update state → emit → transfer |
+| 2 | V-2, DV-2 | Boolean `claimed`/`cancelled` flag. Check at entry, set BEFORE external call |
+| 3 | V-3, DV-3 | Strict state machine: `Open → Accepted → {Settled ∣ Cancelled ∣ Defaulted}`. Enum for status |
+| 4 | V-4, DV-6 | Multi-sig (3/5) for admin functions. 48h timelock for fee change, pause, withdrawal |
+| 5 | V-6, DV-7 | Include `chainId` in signed data. EVM: EIP-712 domain separator. Solana: cluster ID |
+| 6 | V-10, DV-4 | Prevent collateral withdrawal in same block as deposit. Min lock: 1 block |
 
 **🟡 Fix in next sprint:**
-7. **[V-5, DV-5]** Evaluate commit-reveal scheme for acceptOffer or integrate Jito (Solana) / Flashbots (EVM) for private transaction submission
-8. **[V-7]** Validate all input ranges: amount > 0, price > 0, collateral > minimum. Use SafeMath for all arithmetic operations
-9. **[V-8]** Implement strict HTML escaping for all on-chain metadata display. Add Content-Security-Policy header
-10. **[V-9]** Migrate from sequential IDs to UUID for offers. Add ownership check on the API layer
+
+| # | Ref | Action |
+|:---:|---|---|
+| 7 | V-5, DV-5 | Commit-reveal for acceptOffer or integrate Jito (Solana) / Flashbots (EVM) |
+| 8 | V-7 | Validate input ranges: amount > 0, price > 0, collateral > min. SafeMath for all math |
+| 9 | V-8 | Strict HTML escaping for on-chain metadata. Add Content-Security-Policy header |
+| 10 | V-9 | Migrate sequential IDs → UUID. Add ownership check on API layer |
 
 **ℹ️ Security assumptions (not tested by this suite):**
 - Smart contract audit has been completed (spec section 5.1 states "Full audit completed") — this test suite does not replace formal verification
