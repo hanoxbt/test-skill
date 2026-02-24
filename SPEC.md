@@ -501,10 +501,29 @@ For every smart contract interaction or blockchain operation in the spec, genera
 
 ## 🗺️ Coverage Matrix
 
-| Feature | Happy Path | Edge Cases | Negative | Security | DeFi Sec | UI/UX | A11y | Mobile | API | Web3 | Total |
-|---------|-----------|-----------|----------|----------|----------|-------|------|--------|-----|------|-------|
-| F1      | ✅ X      | ✅ X      | ✅ X    | ✅ X    | ✅ X    | ✅ X | ✅ X | ✅ X  | ✅ X| ✅ X | X    |
-| Total   | X         | X         | X        | X        | X        | X     | X    | X      | X   | X    | X    |
+| Category | [F1] | [F2] | [F3] | **Total** |
+|---|:---:|:---:|:---:|:---:|
+| **Core** | | | | |
+| `@happy-path` | X | X | X | **X** |
+| `@basic` | X | X | X | **X** |
+| `@edge-case` | X | X | X | **X** |
+| `@negative` | X | X | X | **X** |
+| **Quality** | | | | |
+| `@security` | X | X | X | **X** |
+| `@defi-security` | X | — | X | **X** |
+| `@ui` `@ux` | X | X | — | **X** |
+| `@accessibility` | X | X | — | **X** |
+| **Platform** | | | | |
+| `@mobile` | X | — | — | **X** |
+| `@api` | X | X | — | **X** |
+| `@performance` | X | — | — | **X** |
+| **DeFi** | | | | |
+| `@web3` | X | X | — | **X** |
+| `@wallet` | — | — | X | **X** |
+| `@smart-contract` | — | X | X | **X** |
+| `@token` | — | X | — | **X** |
+| `@blockchain` | — | — | X | **X** |
+| **Feature Total** | **X** | **X** | **X** | **X** |
 
 ### Priority Distribution
 
@@ -519,17 +538,32 @@ For every smart contract interaction or blockchain operation in the spec, genera
 
 ## 🔗 Requirement Traceability Matrix
 
-| Requirement | Description | Scenarios | Status |
-|---|---|---|---|
-| REQ-1 | [requirement text] | SC-1, SC-2, SC-15 | ✅ Covered (3) |
-| REQ-2 | [requirement text] | SC-12 | ✅ Covered (1) |
-| REQ-7 | [requirement text] | — | ❌ UNCOVERED |
+### Summary
+
+| REQ | Description | # | Status |
+|---|---|:---:|---|
+| REQ-1 | [short requirement text] | X | ✅ |
+| REQ-2 | [short requirement text] | X | ✅ |
+| REQ-7 | [short requirement text] | 0 | ❌ |
 | ... | ... | ... | ... |
 
-### Traceability Summary
-- Total requirements: X
-- ✅ Covered: X (X%)
-- ❌ Uncovered: X (X%) — **requires attention**
+> ✅ Covered: **X**/Y (X%) · ❌ Uncovered: **Z** (Z%) — requires attention
+
+### Detail — Scenario Mapping
+
+<details>
+<summary>Click to expand full REQ → Scenario mapping</summary>
+
+| REQ | Scenarios |
+|---|---|
+| REQ-1 | SC-1, SC-2, SC-15 |
+| REQ-2 | SC-12 |
+| REQ-7 | — |
+| ... | ... |
+
+</details>
+
+> **[REQ-7 note]:** Explain why uncovered — needs spec clarification or insufficient detail.
 
 ---
 
@@ -742,10 +776,10 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 
 | Input spec language | Output behavior |
 |---|---|
-| English | Generate test cases in English |
-| Non-English | Generate test cases in the same language; keep Gherkin keywords in English (`Given`, `When`, `Then`, `Feature`, `Scenario`) |
-| Mixed languages | Match the majority language; flag mixed-language spec in Risk Notes |
-| Unrecognized domain slang | Flag the term in Risk Notes; use closest English equivalent in test case |
+| English | Generate test cases in English (default) |
+| Non-English | Ask user for preferred output language; default to **English** if not specified. Keep Gherkin keywords in English regardless |
+| Mixed languages | Ask user for preferred output language; default to English; flag mixed-language spec in Risk Notes |
+| Unrecognized domain slang | Flag the term in Risk Notes with `# LOCALIZATION: term unclear`; use closest English equivalent in test case |
 
 **Known localization risks — non-English terms AI may misread:**
 
@@ -777,7 +811,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 ### 🔍 Content Quality
 
 - **Hallucination self-check:** After completing all scenarios for each feature, the AI must re-scan every `Then` clause and flag with `# REVIEW: value not in spec` any assertion that contains a specific value (number, time limit, error message text, URL) not explicitly stated in the source spec
-- **Localization:** Always detect input spec language and generate test cases in the same language. Keep Gherkin keywords in English regardless. Flag any unrecognized non-English domain slang in Risk Notes
+- **Localization:** Ask user for preferred output language before generating; default to **English**. Keep Gherkin keywords in English (`Given`/`When`/`Then`) regardless of output language. Translate domain terms to the chosen language. Flag any unrecognized domain slang in Risk Notes
 - **Prompt version tracing:** Every output file must include the Prompt Version used to generate it, so QC can trace changes in output across different skill versions
 - **Requirement traceability — mandatory:** Every scenario must have a `# Covers: REQ-X` tag linking it to at least one requirement from the Requirement Inventory. Uncovered requirements must be flagged in the Traceability Matrix
 - **Security Review Report — mandatory:** Generate the 🛡️ Security Review Report for every spec — no exceptions. Includes attack surface summary, identified vulnerabilities with OWASP mapping, and actionable recommendations split by priority
@@ -813,7 +847,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 |---|---|
 | Spec is too short (< 10 lines) | Generate tests based on what is available, flag missing information in Risk Notes |
 | Spec has many features (> 10) | Divide output into clear sections, with a summary Coverage Matrix at the end |
-| Spec is in a non-English language | Generate test cases in the same language, keep Gherkin keywords in English (Given/When/Then) |
+| Spec is in a non-English language | Ask user for preferred output language (default: English). Translate domain terms; keep Gherkin keywords in English (Given/When/Then) |
 | Spec covers both web and mobile | Cover both platforms, use tags to distinguish |
 | User wants only one test type | Generate only that type, but still include Coverage Matrix and Risk Notes |
 | Spec contains internal contradictions | Flag the contradiction in Risk Notes, generate tests for both interpretations |
@@ -831,7 +865,7 @@ A generated test case is considered **quality-passing** only if it satisfies **A
 
 | Situation | How to Handle |
 |---|---|
-| Spec is written in a non-English language | Generate test cases in the same language; keep Gherkin keywords in English; flag any slang or ambiguous terms in Risk Notes |
+| Spec is written in a non-English language | Ask user for preferred output language (default: English); translate domain terms; flag any slang or ambiguous terms in Risk Notes |
 | Spec uses non-English domain slang or jargon | Flag the term in Risk Notes with `# LOCALIZATION: term unclear`; use closest English equivalent in the scenario |
 
 ### DeFi / Web3 Edge Cases

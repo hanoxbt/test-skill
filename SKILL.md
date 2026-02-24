@@ -86,6 +86,13 @@ The 10 core categories apply to **all software**. Adapt per domain: **API-only**
 
 If user says *"lite"*, *"quick coverage"*, or spec has ≤ 3 requirements → generate only `@happy-path`, `@negative`, `@security`. Output adds: `> ⚡ Lite mode — only core coverage. Run full mode for complete test suite.`
 
+### 🌐 Output Language
+
+Before generating, ask the user:
+> *"What language should the test cases be written in? (default: English)"*
+
+If the user specifies a language → generate in that language (keep Gherkin keywords in English: `Given`/`When`/`Then`/`Scenario`/`Feature`). If the user says nothing or picks default → **English**.
+
 ### 📋 Extraction Checklist
 
 Before writing any tests, extract:
@@ -353,11 +360,29 @@ Feature: [Feature Name]
 
 ## 🗺️ Coverage Matrix
 
-| Feature | Happy Path | Edge Cases | Negative | Security | DeFi Sec | UI/UX | A11y | Mobile | API | Web3 | Total |
-|---------|-----------|-----------|----------|----------|----------|-------|------|--------|-----|------|-------|
-| [F1]    | ✅ X      | ✅ X      | ✅ X    | ✅ X    | ✅ X    | ✅ X | ✅ X | ✅ X  | ✅ X| ✅ X | X    |
-| [F2]    | ...       |           |          |          |          |       |      |        |     |      |       |
-| **Total** | X | X | X | X | X | X | X | X | X | X | **X** |
+| Category | [F1] | [F2] | [F3] | **Total** |
+|---|:---:|:---:|:---:|:---:|
+| **Core** | | | | |
+| `@happy-path` | X | X | X | **X** |
+| `@basic` | X | X | X | **X** |
+| `@edge-case` | X | X | X | **X** |
+| `@negative` | X | X | X | **X** |
+| **Quality** | | | | |
+| `@security` | X | X | X | **X** |
+| `@defi-security` | X | — | X | **X** |
+| `@ui` `@ux` | X | X | — | **X** |
+| `@accessibility` | X | X | — | **X** |
+| **Platform** | | | | |
+| `@mobile` | X | — | — | **X** |
+| `@api` | X | X | — | **X** |
+| `@performance` | X | — | — | **X** |
+| **DeFi** | | | | |
+| `@web3` | X | X | — | **X** |
+| `@wallet` | — | — | X | **X** |
+| `@smart-contract` | — | X | X | **X** |
+| `@token` | — | X | — | **X** |
+| `@blockchain` | — | — | X | **X** |
+| **Feature Total** | **X** | **X** | **X** | **X** |
 
 ### Priority Distribution
 
@@ -372,17 +397,32 @@ Feature: [Feature Name]
 
 ## 🔗 Requirement Traceability Matrix
 
-| Requirement | Description | Scenarios | Status |
-|---|---|---|---|
-| REQ-1 | [requirement text] | SC-1, SC-2, SC-15 | ✅ Covered (3) |
-| REQ-2 | [requirement text] | SC-12 | ✅ Covered (1) |
-| REQ-7 | [requirement text] | — | ❌ UNCOVERED |
+### Summary
+
+| REQ | Description | # | Status |
+|---|---|:---:|---|
+| REQ-1 | [short requirement text] | X | ✅ |
+| REQ-2 | [short requirement text] | X | ✅ |
+| REQ-7 | [short requirement text] | 0 | ❌ |
 | ... | ... | ... | ... |
 
-### Traceability Summary
-- Total requirements: X
-- ✅ Covered: X (X%)
-- ❌ Uncovered: X (X%) — **requires attention**
+> ✅ Covered: **X**/Y (X%) · ❌ Uncovered: **Z** (Z%) — requires attention
+
+### Detail — Scenario Mapping
+
+<details>
+<summary>Click to expand full REQ → Scenario mapping</summary>
+
+| REQ | Scenarios |
+|---|---|
+| REQ-1 | SC-1, SC-2, SC-15 |
+| REQ-2 | SC-12 |
+| REQ-7 | — |
+| ... | ... |
+
+</details>
+
+> **[REQ-7 note]:** Explain why uncovered — needs spec clarification or insufficient detail.
 
 ---
 
@@ -609,4 +649,4 @@ Generate the 🛡️ Security Review Report for **every spec — no exceptions**
 - Flag scenarios that require specific test data or environment setup with a `# Note:` comment
 - Every scenario must have exactly **one** priority tag: `@critical`, `@major`, or `@minor` — no scenario should be untagged for priority
 - **Hallucination self-check (mandatory after each feature):** Re-scan every `Then` clause. Any specific value (timeout, error message text, URL, status code, number) not explicitly stated in the spec must be replaced with `[TBD]` and flagged with `# REVIEW: value not in spec`
-- **Localization:** Detect the language of the input spec; generate all test cases in that same language. Always keep Gherkin keywords in English (`Given`, `When`, `Then`, `Scenario`, `Feature`). For non-English specs, flag any unrecognized domain slang with `# LOCALIZATION: term unclear`
+- **Localization:** Generate test cases in the language chosen by the user (default: **English**). Always keep Gherkin keywords in English (`Given`, `When`, `Then`, `Scenario`, `Feature`). For non-English specs, translate domain terms to the output language; flag any unrecognized domain slang with `# LOCALIZATION: term unclear`
